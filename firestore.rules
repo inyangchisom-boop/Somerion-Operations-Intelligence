@@ -1,0 +1,33 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function owns(userId) {
+      return request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId}/orders/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create, update: if owns(userId)
+        && request.resource.data.reference is string
+        && request.resource.data.reference.size() > 0
+        && request.resource.data.customer is string
+        && request.resource.data.customer.size() > 0
+        && request.resource.data.total is number
+        && request.resource.data.total >= 0
+        && request.resource.data.status in ['Pending','Processing','Shipped','Completed','Cancelled'];
+    }
+    match /users/{userId}/products/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create, update: if owns(userId)
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.sku is string
+        && request.resource.data.quantity is int
+        && request.resource.data.quantity >= 0
+        && request.resource.data.reorderLevel is int
+        && request.resource.data.reorderLevel >= 0;
+    }
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
