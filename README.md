@@ -10,7 +10,8 @@ Responsive ecommerce operations workspace foundation for phones, tablets and des
 - No seeded demo data or simulated third-party connections.
 - Order records support an individual ISO 4217 currency code; USD is the default for new orders and legacy records without a currency.
 - A searchable directory lists commerce, marketplace, accounting, payment, social, marketing, shipping, support and analytics platforms.
-- A Cloudflare Worker and D1 database provide a first WooCommerce connector foundation. WooCommerce credentials are encrypted at rest; the Worker validates the signed-in user's Firebase ID token and requests the store's REST API over HTTPS.
+- A Cloudflare Worker and D1 database provide the integration API, a 47-provider registry, per-user connection status, and a generic encrypted-connection storage table. The Worker validates the signed-in user's Firebase ID token.
+- WooCommerce has a manual connection and import path. Its REST credentials are encrypted at rest; the Worker verifies the store and requests its REST API. Other providers are registered with their expected authorization type but are not yet live connectors.
 - The WooCommerce interface can import up to 100 recent orders and 100 products into the signed-in user's Firestore records. Imported order references use a `WC-` prefix; product SKUs use the store SKU or a `WC-` fallback. Existing matching references/SKUs are skipped on subsequent syncs.
 
 ## Separate Firebase project — required
@@ -29,7 +30,7 @@ In repository Settings > Pages, choose Deploy from a branch, select main and /(r
 https://inyangchisom-boop.github.io/Somerion-Operations-Intelligence/
 
 ## Not yet implemented
-OAuth-based authorization, scheduled/background synchronization, pagination beyond the first 100 records, incremental updates/deletions, conflict resolution, automated sync health, cross-platform reconciliation, currency conversion, team roles, audit logs, data export/import, automated tests, monitoring, privacy/legal pages and production security review. WooCommerce is the only connector with an initial manual connection/import path; other directory entries remain catalog-only. The WooCommerce path has not been tested against a real store because no test store/API credentials have been supplied. Do not treat this foundation as production-ready. Order totals display in the currency saved on each order; this does not perform currency conversion or consolidate mixed currencies into one base-currency total. This foundation must be tested and hardened before real business use.
+Provider-specific OAuth apps, API credentials, callback registrations, scopes, adapter implementations, and live data synchronization for the remaining 46 providers are still required. The registry does not mean those platforms are connected. Scheduled/background synchronization, pagination beyond the first 100 WooCommerce records, incremental updates/deletions, conflict resolution, automated sync health, cross-platform reconciliation, currency conversion, team roles, audit logs, data export/import, automated tests, monitoring, privacy/legal pages and production security review also remain. The WooCommerce path has not been tested against a real store because no test store/API credentials have been supplied. Do not treat this foundation as production-ready. Order totals display in the currency saved on each order; this does not perform currency conversion or consolidate mixed currencies into one base-currency total. This foundation must be tested and hardened before real business use.
 
 ## Backend preparation status
 
