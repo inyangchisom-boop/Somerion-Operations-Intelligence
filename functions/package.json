@@ -1,0 +1,17 @@
+{
+  "name": "somerion-operations-intelligence-functions",
+  "private": true,
+  "description": "Server-side messaging controls for Somerion Operations Intelligence",
+  "engines": {
+    "node": "22"
+  },
+  "main": "index.js",
+  "scripts": {
+    "lint": "node --check index.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.0.2",
+    "firebase-functions": "^6.3.2",
+    "nodemailer": "^6.10.1"
+  }
+}
