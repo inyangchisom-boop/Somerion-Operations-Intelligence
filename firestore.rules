@@ -10,8 +10,63 @@ service cloud.firestore {
           'reference', 'customer', 'total', 'status', 'createdAt', 'updatedAt'
         ])
         && data.keys().hasOnly([
-          'reference', 'customer', 'total', 'status', 'createdAt', 'updatedAt'
+          'reference', 'customer', 'total', 'status', 'currency', 'createdAt', 'updatedAt'
         ])
+        && (!('currency' in data) || (data.currency is string && data.currency.matches('^[A-Z]{3}
+        && data.reference is string
+        && data.reference.size() > 0
+        && data.reference.size() <= 60
+        && data.customer is string
+        && data.customer.size() > 0
+        && data.customer.size() <= 100
+        && data.total is number
+        && data.total >= 0
+        && data.status in ['Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validProduct(data) {
+      return data.keys().hasAll([
+          'name', 'sku', 'quantity', 'reorderLevel', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name', 'sku', 'quantity', 'reorderLevel', 'createdAt', 'updatedAt'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.sku is string
+        && data.sku.size() <= 60
+        && data.quantity is int
+        && data.quantity >= 0
+        && data.reorderLevel is int
+        && data.reorderLevel >= 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId}/orders/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validOrder(request.resource.data);
+      allow update: if owns(userId)
+        && validOrder(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /users/{userId}/products/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validProduct(request.resource.data);
+      allow update: if owns(userId)
+        && validProduct(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+})))
         && data.reference is string
         && data.reference.size() > 0
         && data.reference.size() <= 60
