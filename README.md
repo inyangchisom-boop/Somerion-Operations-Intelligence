@@ -9,7 +9,9 @@ Responsive ecommerce operations workspace foundation for phones, tablets and des
 - Overview metrics calculated from the signed-in user's saved records.
 - No seeded demo data or simulated third-party connections.
 - Order records support an individual ISO 4217 currency code; USD is the default for new orders and legacy records without a currency.
-- A searchable directory lists commerce, marketplace, accounting, payment, social, marketing, shipping, support and analytics platforms. All are clearly marked as directory listings, not connected integrations.
+- A searchable directory lists commerce, marketplace, accounting, payment, social, marketing, shipping, support and analytics platforms.
+- A Cloudflare Worker and D1 database provide a first WooCommerce connector foundation. WooCommerce credentials are encrypted at rest; the Worker validates the signed-in user's Firebase ID token and requests the store's REST API over HTTPS.
+- The WooCommerce interface can import up to 100 recent orders and 100 products into the signed-in user's Firestore records. Imported order references use a `WC-` prefix; product SKUs use the store SKU or a `WC-` fallback. Existing matching references/SKUs are skipped on subsequent syncs.
 
 ## Separate Firebase project — required
 Do not reuse the Firebase project for Somerion Sintara.
@@ -27,7 +29,7 @@ In repository Settings > Pages, choose Deploy from a branch, select main and /(r
 https://inyangchisom-boop.github.io/Somerion-Operations-Intelligence/
 
 ## Not yet implemented
-Platform-specific OAuth, server-side token storage, live synchronization, automated sync health, cross-platform reconciliation, currency conversion, team roles, audit logs, data export/import, automated tests, monitoring, privacy/legal pages and production security review. The platform directory is a roadmap/catalog only; no third-party account connection is active. These are not represented as working. Order totals display in the currency saved on each order; this does not perform currency conversion or consolidate mixed currencies into one base-currency total. This foundation must be tested and hardened before real business use.
+OAuth-based authorization, scheduled/background synchronization, pagination beyond the first 100 records, incremental updates/deletions, conflict resolution, automated sync health, cross-platform reconciliation, currency conversion, team roles, audit logs, data export/import, automated tests, monitoring, privacy/legal pages and production security review. WooCommerce is the only connector with an initial manual connection/import path; other directory entries remain catalog-only. The WooCommerce path has not been tested against a real store because no test store/API credentials have been supplied. Do not treat this foundation as production-ready. Order totals display in the currency saved on each order; this does not perform currency conversion or consolidate mixed currencies into one base-currency total. This foundation must be tested and hardened before real business use.
 
 ## Backend preparation status
 
