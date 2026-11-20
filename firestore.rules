@@ -4,28 +4,63 @@ service cloud.firestore {
     function owns(userId) {
       return request.auth != null && request.auth.uid == userId;
     }
+
+    function validOrder(data) {
+      return data.keys().hasAll([
+          'reference', 'customer', 'total', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'reference', 'customer', 'total', 'status', 'createdAt', 'updatedAt'
+        ])
+        && data.reference is string
+        && data.reference.size() > 0
+        && data.reference.size() <= 60
+        && data.customer is string
+        && data.customer.size() > 0
+        && data.customer.size() <= 100
+        && data.total is number
+        && data.total >= 0
+        && data.status in ['Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function validProduct(data) {
+      return data.keys().hasAll([
+          'name', 'sku', 'quantity', 'reorderLevel', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'name', 'sku', 'quantity', 'reorderLevel', 'createdAt', 'updatedAt'
+        ])
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 120
+        && data.sku is string
+        && data.sku.size() <= 60
+        && data.quantity is int
+        && data.quantity >= 0
+        && data.reorderLevel is int
+        && data.reorderLevel >= 0
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
     match /users/{userId}/orders/{recordId} {
       allow read, delete: if owns(userId);
-      allow create, update: if owns(userId)
-        && request.resource.data.reference is string
-        && request.resource.data.reference.size() > 0
-        && request.resource.data.customer is string
-        && request.resource.data.customer.size() > 0
-        && request.resource.data.total is number
-        && request.resource.data.total >= 0
-        && request.resource.data.status in ['Pending','Processing','Shipped','Completed','Cancelled'];
+      allow create: if owns(userId) && validOrder(request.resource.data);
+      allow update: if owns(userId)
+        && validOrder(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
     }
+
     match /users/{userId}/products/{recordId} {
       allow read, delete: if owns(userId);
-      allow create, update: if owns(userId)
-        && request.resource.data.name is string
-        && request.resource.data.name.size() > 0
-        && request.resource.data.sku is string
-        && request.resource.data.quantity is int
-        && request.resource.data.quantity >= 0
-        && request.resource.data.reorderLevel is int
-        && request.resource.data.reorderLevel >= 0;
+      allow create: if owns(userId) && validProduct(request.resource.data);
+      allow update: if owns(userId)
+        && validProduct(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
     }
+
     match /{document=**} {
       allow read, write: if false;
     }
