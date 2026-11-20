@@ -5,7 +5,9 @@ This register records the providers listed in the Somerion Operations Intelligen
 ## Current verified implementation scope
 
 - **WooCommerce:** a manual REST API connection and import path is implemented in the application code. It imports up to 100 recent orders and 100 products per manual sync. No real store has been provided, so a live third-party connection has not been end-to-end tested.
-- **Other providers:** all 46 remain incomplete as end-to-end data integrations. The shared OAuth 2.0 + PKCE authorization foundation is deployed for registry entries marked `oauth2`, but no provider apps are configured and no account has been connected. API-key and signed-API providers still require individual credential forms and provider-specific validation. No provider other than WooCommerce currently has a working data import/sync adapter.
+- **HubSpot, Airtable, and Notion:** added to the provider registry. Their provider-specific developer-app credentials, OAuth endpoints, scopes, token-exchange differences, and read-data adapters are not yet configured or tested. They are not live integrations yet.
+- **PayPal Sandbox:** a separate credential form and backend verification path now exchange Sandbox client credentials for a PayPal OAuth access token, encrypt the credentials/token, and provide a read-only recent-transaction test endpoint. No Sandbox credentials have been supplied, so this flow and the transaction endpoint have not been end-to-end tested. It is not a live PayPal merchant connection.
+- **Remaining providers:** the shared OAuth 2.0 + PKCE foundation is still generic and requires provider-specific setup. No provider other than WooCommerce currently has a verified production data import/sync adapter.
 
 ## Provider register
 
@@ -16,12 +18,12 @@ This register records the providers listed in the Somerion Operations Intelligen
 | Accounting | QuickBooks Online, Xero, Zoho Books, Sage Accounting, FreshBooks |
 | Payments | Stripe, PayPal, Square, Adyen, Razorpay |
 | Social | Instagram, Facebook Pages, TikTok, YouTube, Pinterest, LinkedIn Pages |
-| Marketing | Mailchimp, Klaviyo, HubSpot, Brevo, ActiveCampaign |
+| Marketing | Mailchimp, Klaviyo, HubSpot, Brevo, ActiveCampaign |\n| Productivity | Airtable, Notion |
 | Shipping | ShipStation, Shippo, DHL, FedEx, UPS |
 | Support | Zendesk, Intercom, Freshdesk |
 | Analytics | Google Analytics, Google Ads, Meta Ads |
 
-## Implemented authorization foundation (2026-11-21)
+## New test connectors (2026-11-21)\n\n- Added Airtable and Notion to the provider registry and Somerion interface. Their OAuth developer-app settings and provider-specific read adapters remain to be configured.\n- Added a PayPal Sandbox credential form. The Worker validates credentials against PayPal Sandbox, stores the encrypted app credentials and short-lived token, refreshes the token when needed, and exposes a read-only transaction search for the previous seven days. This is sandbox-only and has not been tested with a real Sandbox app yet.\n- Corrected Worker request routing so the URL is initialized before route checks, the external OAuth callback is handled before API path validation, and Firebase identity is checked before authenticated integration actions. Deployment was accepted by Cloudflare; runtime/end-to-end tests are still pending.\n\n## Implemented authorization foundation (2026-11-21)
 
 - Added a shared OAuth 2.0 authorization-code + PKCE start/callback flow to the Cloudflare Worker for providers whose registry auth type is `oauth2`.
 - OAuth state is stored hashed in D1, expires after 10 minutes, and is single-use.
