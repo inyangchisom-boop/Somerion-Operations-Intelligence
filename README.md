@@ -8,7 +8,7 @@ Responsive ecommerce operations workspace foundation for phones, tablets and des
 - Create, edit, search, filter and delete order and inventory records.
 - Overview metrics calculated from the signed-in user's saved records.
 - No seeded demo data or simulated third-party connections.
-- Shopify and QuickBooks are explicitly marked **Not connected**.
+- Order records support an individual ISO 4217 currency code; USD is the default for new orders and legacy records without a currency.\n- A searchable directory lists commerce, marketplace, accounting, payment, social, marketing, shipping, support and analytics platforms. All are clearly marked as directory listings, not connected integrations.
 
 ## Separate Firebase project — required
 Do not reuse the Firebase project for Somerion Sintara.
@@ -26,7 +26,7 @@ In repository Settings > Pages, choose Deploy from a branch, select main and /(r
 https://inyangchisom-boop.github.io/Somerion-Operations-Intelligence/
 
 ## Not yet implemented
-Shopify/QuickBooks OAuth, server-side token storage, live synchronization, social integrations, team roles, audit logs, data export/import, automated tests, monitoring, privacy/legal pages and production security review. These are not represented as working. Monetary totals currently display in USD. This foundation must be tested and hardened before real business use.
+Platform-specific OAuth, server-side token storage, live synchronization, automated sync health, cross-platform reconciliation, currency conversion, team roles, audit logs, data export/import, automated tests, monitoring, privacy/legal pages and production security review. The platform directory is a roadmap/catalog only; no third-party account connection is active. These are not represented as working. Order totals display in the currency saved on each order; this does not perform currency conversion or consolidate mixed currencies into one base-currency total. This foundation must be tested and hardened before real business use.
 
 ## Backend preparation status
 
