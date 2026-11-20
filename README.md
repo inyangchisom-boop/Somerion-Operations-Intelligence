@@ -8,7 +8,8 @@ Responsive ecommerce operations workspace foundation for phones, tablets and des
 - Create, edit, search, filter and delete order and inventory records.
 - Overview metrics calculated from the signed-in user's saved records.
 - No seeded demo data or simulated third-party connections.
-- Order records support an individual ISO 4217 currency code; USD is the default for new orders and legacy records without a currency.\n- A searchable directory lists commerce, marketplace, accounting, payment, social, marketing, shipping, support and analytics platforms. All are clearly marked as directory listings, not connected integrations.
+- Order records support an individual ISO 4217 currency code; USD is the default for new orders and legacy records without a currency.
+- A searchable directory lists commerce, marketplace, accounting, payment, social, marketing, shipping, support and analytics platforms. All are clearly marked as directory listings, not connected integrations.
 
 ## Separate Firebase project — required
 Do not reuse the Firebase project for Somerion Sintara.
