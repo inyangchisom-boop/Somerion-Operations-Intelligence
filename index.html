@@ -42,6 +42,7 @@
       <button data-page="orders"><span class="nav-icon">▤</span>Orders</button>
       <button data-page="inventory"><span class="nav-icon">▦</span>Inventory</button>
       <button data-page="connections"><span class="nav-icon">⌘</span>Integrations<span class="nav-count">47</span></button>
+      <button data-page="task-monitor"><span class="nav-icon">✳</span>AI Task Monitor<span class="nav-count">AI</span></button>
     </nav>
     <div class="sidebar-bottom"><div class="sidebar-status"><span class="secure-dot"></span><span><strong>Workspace secure</strong><small>Live account connection</small></span></div><button id="logout" class="logout"><span class="nav-icon">↪</span>Sign out</button></div>
   </aside>
@@ -65,6 +66,27 @@
       <section id="orders" class="page inner-page" hidden><div class="page-intro"><div><p class="eyebrow">SALES OPERATIONS</p><h1>Orders</h1><p class="muted">Create, review and track your business orders.</p></div><button id="newOrder" class="primary-action"><span>＋</span> Add order</button></div><div class="filter-bar"><label class="search-field"><span>⌕</span><input id="orderSearch" placeholder="Search order or customer"></label><select id="orderFilter"><option value="all">All statuses</option><option>Pending</option><option>Processing</option><option>Shipped</option><option>Completed</option><option>Cancelled</option></select></div><div class="content-card table-card" id="orderRows"></div></section>
       <section id="inventory" class="page inner-page" hidden><div class="page-intro"><div><p class="eyebrow">STOCK MANAGEMENT</p><h1>Inventory</h1><p class="muted">Keep product quantities and stock levels under control.</p></div><button id="newProduct" class="primary-action"><span>＋</span> Add item</button></div><div class="filter-bar"><label class="search-field"><span>⌕</span><input id="productSearch" placeholder="Search product or SKU"></label><select id="stockFilter"><option value="all">All stock levels</option><option value="low">Low stock</option><option value="healthy">Healthy stock</option></select></div><div class="content-card table-card" id="productRows"></div></section>
       <section id="connections" class="page inner-page" hidden><div class="page-intro"><div><p class="eyebrow">YOUR BUSINESS ECOSYSTEM</p><h1>Integrations</h1><p class="muted">Explore the platforms Somerion is preparing to bring into one workspace.</p></div><div class="integration-total"><strong>47</strong><span>PLATFORMS<br>IN DIRECTORY</span></div></div><div class="integration-callout"><div class="integration-callout-icon">⌘</div><div><strong>One connected operation starts here.</strong><p>Some providers still require developer setup before account authorization and live data sync are available.</p></div></div><div class="integration-tools"><label class="search-field"><span>⌕</span><input id="integrationSearch" type="search" placeholder="Find a platform…"></label><select id="integrationCategory"><option value="all">All categories</option><option value="Commerce">Online stores</option><option value="Marketplaces">Marketplaces</option><option value="Accounting">Accounting</option><option value="Payments">Payments</option><option value="Social">Social media</option><option value="Marketing">Marketing</option><option value="Shipping">Shipping & fulfilment</option><option value="Support">Customer support</option><option value="Analytics">Analytics & advertising</option><option value="Productivity">Productivity & databases</option></select></div><p id="integrationCount" class="integration-count" aria-live="polite"></p><div id="integrationGrid" class="integration-grid"></div></section>
+      <section id="task-monitor" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">SOMERION INTELLIGENCE</p><h1>AI Task Monitor</h1><p class="muted">Track commitments, spot due work and ask your assistant for a focused progress summary.</p></div><button id="agentRefresh" class="button-quiet">↻ Refresh monitor</button></div>
+        <div class="agent-metrics">
+          <article><small>OPEN TASKS</small><strong id="agentOpenCount">—</strong></article>
+          <article><small>IN PROGRESS</small><strong id="agentProgressCount">—</strong></article>
+          <article><small>OVERDUE</small><strong id="agentOverdueCount">—</strong></article>
+          <article><small>DUE IN 24 HOURS</small><strong id="agentDueCount">—</strong></article>
+        </div>
+        <div class="agent-layout">
+          <div class="agent-main-column">
+            <section class="content-card agent-create-card"><div class="card-heading"><div><h3>Add a task to monitor</h3><p>Tasks are private to your signed-in account.</p></div><span class="agent-spark">✳</span></div>
+              <form id="agentTaskForm" class="agent-task-form"><label>Task title<input id="agentTaskTitle" maxlength="160" required placeholder="e.g. Review supplier invoices"></label><label>Details (optional)<textarea id="agentTaskDetails" maxlength="2000" rows="2" placeholder="Add context, owner or next step"></textarea></label><label>Due date and time (optional)<input id="agentTaskDue" type="datetime-local"></label><button type="submit" id="agentTaskAdd">＋ Add monitored task</button></form><p id="agentTaskMsg" class="msg" role="status"></p>
+            </section>
+            <section class="content-card agent-list-card"><div class="card-heading"><div><h3>Your monitored tasks</h3><p>Updates are saved to your separate Somerion agent service.</p></div><span id="agentTaskTotal" class="agent-total">0 tasks</span></div><div id="agentTaskList"><p class="empty">Loading your tasks…</p></div></section>
+          </div>
+          <div class="agent-side-column">
+            <section class="content-card agent-chat-card"><div class="card-heading"><div><h3>Ask Sintara Agent</h3><p>AI assistance based on your saved tasks.</p></div><span class="agent-live"><i></i> AI</span></div><div id="agentChatLog" class="agent-chat-log" aria-live="polite"><div class="agent-chat-bubble assistant">Hello. I can summarize your task list, identify overdue work and help you decide what to handle next.</div></div><form id="agentChatForm" class="agent-chat-form"><textarea id="agentChatInput" rows="2" maxlength="2500" placeholder="Ask about your tasks…" required></textarea><button id="agentChatSend" type="submit">Ask AI →</button></form><p class="agent-disclaimer">The assistant uses tasks you enter here. It does not yet monitor external apps or send email/SMS.</p></section>
+            <section class="content-card agent-alert-card"><div class="card-heading"><div><h3>Task alerts</h3><p>Reminders for tasks due within 24 hours or overdue.</p></div><span class="agent-spark">◷</span></div><label class="agent-reminder-toggle"><input id="agentReminders" type="checkbox" checked> Enable in-app reminders</label><div id="agentNotifications"><p class="empty">No alerts yet.</p></div></section>
+          </div>
+        </div>
+      </section>
       <footer><span>© SOMERION OPERATIONS INTELLIGENCE</span><span>BUILT FOR CLARITY <b>·</b> DESIGNED TO SCALE</span></footer>
     </div>
   </main>
