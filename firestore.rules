@@ -170,6 +170,23 @@ service cloud.firestore {
       allow create: if owns(userId) && validServiceJob(request.resource.data);
       allow update: if owns(userId) && validServiceJob(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
     }
+    function validTask(data) {
+      return data.keys().hasAll(['title','projectId','projectName','assignee','status','dueDate','details','createdAt','updatedAt'])
+        && data.keys().hasOnly(['title','projectId','projectName','assignee','status','dueDate','details','createdAt','updatedAt'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 160
+        && data.projectId is string && data.projectId.size() <= 128
+        && data.projectName is string && data.projectName.size() <= 160
+        && data.assignee is string && data.assignee.size() <= 120
+        && data.status in ['todo','in-progress','blocked','done']
+        && data.dueDate is string && data.dueDate.size() <= 10
+        && data.details is string && data.details.size() <= 2000
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    match /users/{userId}/tasks/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validTask(request.resource.data);
+      allow update: if owns(userId) && validTask(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+    }
     match /users/{userId}/finance/{recordId} {
       allow read, delete: if owns(userId);
       allow create: if owns(userId) && validFinanceEntry(request.resource.data);
