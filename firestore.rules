@@ -49,6 +49,44 @@ service cloud.firestore {
         && data.updatedAt is timestamp;
     }
 
+
+    function validBusinessProfile(data) {
+      return data.keys().hasAll([
+          'businessName', 'industry', 'businessSize', 'country', 'baseCurrency', 'createdAt', 'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'businessName', 'industry', 'businessSize', 'country', 'baseCurrency', 'createdAt', 'updatedAt'
+        ])
+        && data.businessName is string
+        && data.businessName.size() > 0
+        && data.businessName.size() <= 100
+        && data.industry in [
+          'commerce', 'retail', 'professional-services', 'agency', 'hospitality',
+          'health-wellness', 'construction-trades', 'education', 'logistics',
+          'manufacturing', 'nonprofit-public', 'other'
+        ]
+        && data.businessSize in ['solo', 'small', 'medium', 'large', 'nonprofit']
+        && data.country is string
+        && data.country.size() > 0
+        && data.country.size() <= 80
+        && data.baseCurrency is string
+        && data.baseCurrency.matches('^[A-Z]{3}$')
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId}/settings/{settingId} {
+      allow read: if owns(userId) && settingId == 'businessProfile';
+      allow create: if owns(userId)
+        && settingId == 'businessProfile'
+        && validBusinessProfile(request.resource.data);
+      allow update: if owns(userId)
+        && settingId == 'businessProfile'
+        && validBusinessProfile(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if false;
+    }
+
     match /users/{userId}/orders/{recordId} {
       allow read, delete: if owns(userId);
       allow create: if owns(userId) && validOrder(request.resource.data);
