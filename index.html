@@ -36,10 +36,11 @@
 <div id="workspace" class="workspace" hidden>
   <aside class="sidebar">
     <div class="brand sidebar-brand"><span class="brand-symbol"><svg class="wing-mark" viewBox="0 0 64 64" role="img" aria-label="Somerion wing logo" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wingGradient" x1="7" y1="58" x2="57" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#38DDF3"/><stop offset=".52" stop-color="#528BFF"/><stop offset="1" stop-color="#B68BFF"/></linearGradient></defs><path d="M5 57C19 51 29 41 37 27 43 16 51 8 60 4 58 19 51 34 40 45 30 55 18 60 5 57Z" fill="url(#wingGradient)"/><path d="M9 55C24 43 37 27 51 10" fill="none" stroke="#F4FBFF" stroke-width="3.6" stroke-linecap="round"/><path d="M16 51 25 40M25 46 35 34M34 39 44 27M42 31 51 19" fill="none" stroke="#F4FBFF" stroke-width="3" stroke-linecap="round" opacity=".96"/><path d="M20 52C29 51 37 47 44 40" fill="none" stroke="#D9F7FF" stroke-width="2" stroke-linecap="round" opacity=".9"/></svg></span><span>SOMERION<small>OPERATIONS INTELLIGENCE</small></span></div>
-    <div class="workspace-switch"><span class="workspace-mark"><svg class="wing-mark" viewBox="0 0 64 64" role="img" aria-label="Somerion wing logo" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wingGradient" x1="7" y1="58" x2="57" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#38DDF3"/><stop offset=".52" stop-color="#528BFF"/><stop offset="1" stop-color="#B68BFF"/></linearGradient></defs><path d="M5 57C19 51 29 41 37 27 43 16 51 8 60 4 58 19 51 34 40 45 30 55 18 60 5 57Z" fill="url(#wingGradient)"/><path d="M9 55C24 43 37 27 51 10" fill="none" stroke="#F4FBFF" stroke-width="3.6" stroke-linecap="round"/><path d="M16 51 25 40M25 46 35 34M34 39 44 27M42 31 51 19" fill="none" stroke="#F4FBFF" stroke-width="3" stroke-linecap="round" opacity=".96"/><path d="M20 52C29 51 37 47 44 40" fill="none" stroke="#D9F7FF" stroke-width="2" stroke-linecap="round" opacity=".9"/></svg></span><span><small>WORKSPACE</small><strong>My business</strong></span><span class="switch-chevron">⌄</span></div>
+    <div class="workspace-switch"><span class="workspace-mark"><svg class="wing-mark" viewBox="0 0 64 64" role="img" aria-label="Somerion wing logo" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wingGradient" x1="7" y1="58" x2="57" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#38DDF3"/><stop offset=".52" stop-color="#528BFF"/><stop offset="1" stop-color="#B68BFF"/></linearGradient></defs><path d="M5 57C19 51 29 41 37 27 43 16 51 8 60 4 58 19 51 34 40 45 30 55 18 60 5 57Z" fill="url(#wingGradient)"/><path d="M9 55C24 43 37 27 51 10" fill="none" stroke="#F4FBFF" stroke-width="3.6" stroke-linecap="round"/><path d="M16 51 25 40M25 46 35 34M34 39 44 27M42 31 51 19" fill="none" stroke="#F4FBFF" stroke-width="3" stroke-linecap="round" opacity=".96"/><path d="M20 52C29 51 37 47 44 40" fill="none" stroke="#D9F7FF" stroke-width="2" stroke-linecap="round" opacity=".9"/></svg></span><span><small>WORKSPACE</small><strong id="businessWorkspaceName">My business</strong></span><span class="switch-chevron">⌄</span></div>
     <p class="nav-label">WORKSPACE</p>
     <nav>
       <button data-page="overview" class="active"><span class="nav-icon">◫</span>Overview</button>
+      <button data-page="business-profile"><span class="nav-icon">◎</span>Business profile</button>
       <button data-page="orders"><span class="nav-icon">▤</span>Orders</button>
       <button data-page="inventory"><span class="nav-icon">▦</span>Inventory</button>
       <button data-page="connections"><span class="nav-icon">⌘</span>Integrations<span class="nav-count">47</span></button>
@@ -64,6 +65,42 @@
         <div class="overview-grid"><div class="content-card recent-card"><div class="card-heading"><div><h3>Recent orders</h3><p>Your latest order activity</p></div><button class="text-action" data-page="orders">View all <span>→</span></button></div><div id="recent">Loading…</div></div>
           <div class="content-card signal-card"><div class="card-heading"><div><h3>Operations signals</h3><p>Things that may need your attention</p></div><span class="signal-spark">✳</span></div><div id="signals">Loading…</div><div class="signal-foot"><span class="secure-dot"></span> Signals update as your records change</div></div></div>
         <div class="bottom-promo"><div><span class="eyebrow">MAKE SOMERION YOUR HUB</span><h3>Bring your business tools together.</h3><p>Explore the growing platform directory and discover what you can connect.</p></div><button data-page="connections">Browse integrations <span>→</span></button></div>
+      </section>
+      <section id="business-profile" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">UNIVERSAL BUSINESS SETUP</p><h1>Business profile</h1><p class="muted">Tell Somerion what kind of organization this workspace supports.</p></div></div>
+        <form id="businessProfileForm" class="content-card business-profile-card">
+          <div class="business-profile-fields">
+            <label>Business or organization name<input id="businessName" required maxlength="100" autocomplete="organization" placeholder="Enter your business name"></label>
+            <label>Industry<select id="businessIndustry" required>
+              <option value="">Choose an industry</option>
+              <option value="commerce">Ecommerce and online selling</option>
+              <option value="retail">Retail and wholesale</option>
+              <option value="professional-services">Professional services</option>
+              <option value="agency">Agency and consulting</option>
+              <option value="hospitality">Hospitality and food</option>
+              <option value="health-wellness">Healthcare and wellness</option>
+              <option value="construction-trades">Construction and trades</option>
+              <option value="education">Education and training</option>
+              <option value="logistics">Logistics and transportation</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="nonprofit-public">Nonprofit and public sector</option>
+              <option value="other">Other</option>
+            </select></label>
+            <label>Organization size<select id="businessSize" required>
+              <option value="">Choose organization size</option>
+              <option value="solo">Individual / solo operator</option>
+              <option value="small">Small business</option>
+              <option value="medium">Medium-sized business</option>
+              <option value="large">Large organization</option>
+              <option value="nonprofit">Nonprofit organization</option>
+            </select></label>
+            <label>Country or primary operating region<input id="businessCountry" required maxlength="80" autocomplete="country-name" placeholder="Enter country or region"></label>
+            <label>Base currency code<input id="businessCurrency" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" autocapitalize="characters" placeholder="e.g. USD"></label>
+          </div>
+          <p class="profile-help">Use the currency your business primarily reports in. This setting does not convert amounts in other currencies.</p>
+          <p id="businessProfileMsg" class="msg" role="status"></p>
+          <div class="dialog-actions"><button type="submit" id="saveBusinessProfile" class="primary-action">Save business profile</button></div>
+        </form>
       </section>
       <section id="orders" class="page inner-page" hidden><div class="page-intro"><div><p class="eyebrow">SALES OPERATIONS</p><h1>Orders</h1><p class="muted">Create, review and track your business orders.</p></div><button id="newOrder" class="primary-action"><span>＋</span> Add order</button></div><div class="filter-bar"><label class="search-field"><span>⌕</span><input id="orderSearch" placeholder="Search order or customer"></label><select id="orderFilter"><option value="all">All statuses</option><option>Pending</option><option>Processing</option><option>Shipped</option><option>Completed</option><option>Cancelled</option></select></div><div class="content-card table-card" id="orderRows"></div></section>
       <section id="inventory" class="page inner-page" hidden><div class="page-intro"><div><p class="eyebrow">STOCK MANAGEMENT</p><h1>Inventory</h1><p class="muted">Keep product quantities and stock levels under control.</p></div><button id="newProduct" class="primary-action"><span>＋</span> Add item</button></div><div class="filter-bar"><label class="search-field"><span>⌕</span><input id="productSearch" placeholder="Search product or SKU"></label><select id="stockFilter"><option value="all">All stock levels</option><option value="low">Low stock</option><option value="healthy">Healthy stock</option></select></div><div class="content-card table-card" id="productRows"></div></section>
