@@ -42,7 +42,8 @@
       <button data-page="overview" class="active"><span class="nav-icon">◫</span>Overview</button>
       <button data-page="business-profile"><span class="nav-icon">◎</span>Business profile</button>
       <button data-page="crm"><span class="nav-icon">♙</span>CRM</button>
-      <button data-page="projects"><span class="nav-icon">▣</span>Projects and tasks</button>
+      <button data-page="projects"><span class="nav-icon">▣</span>Projects</button>
+      <button data-page="tasks"><span class="nav-icon">☷</span>Tasks</button>
       <button data-page="service-jobs"><span class="nav-icon">◷</span>Bookings and jobs</button>
       <button data-page="finance"><span class="nav-icon">＄</span>Finance</button>
       <button data-page="orders"><span class="nav-icon">▤</span>Orders</button>
@@ -125,6 +126,18 @@
           <label class="module-wide">Description<textarea name="description" rows="2" maxlength="2000" placeholder="Scope, goals and next steps"></textarea></label>
         </div><div class="module-actions"><button type="button" class="secondary" data-module-cancel="projects" hidden>Cancel edit</button><button type="submit" class="primary-action">Save project</button></div><p id="projectMsg" class="msg" role="status"></p></form>
         <div class="content-card module-list"><div class="card-heading"><div><h3>Projects</h3><p>Track planned and active work</p></div><span id="projectCount" class="module-count">0</span></div><div id="projectRows" class="module-table-wrap"><p class="empty">Loading projects…</p></div></div>
+      </section>
+      <section id="tasks" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">WORK MANAGEMENT</p><h1>Tasks</h1><p class="muted">Create actionable work items, connect them to projects and track deadlines.</p></div></div>
+        <form id="taskForm" class="content-card module-form"><h3 id="taskFormTitle">Create a task</h3><input type="hidden" name="recordId"><div class="module-fields">
+          <label>Task title<input name="title" required maxlength="160" placeholder="What needs to be done?"></label>
+          <label>Project<select name="projectId"><option value="">General / no project</option></select></label>
+          <label>Assigned to<input name="assignee" maxlength="120" placeholder="Person or team"></label>
+          <label>Status<select name="status" required><option value="todo">To do</option><option value="in-progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></label>
+          <label>Due date<input name="dueDate" type="date"></label>
+          <label class="module-wide">Details<textarea name="details" rows="2" maxlength="2000" placeholder="Steps, context or acceptance notes"></textarea></label>
+        </div><div class="module-actions"><button type="button" class="secondary" data-module-cancel="tasks" hidden>Cancel edit</button><button type="submit" class="primary-action">Save task</button></div><p id="taskMsg" class="msg" role="status"></p></form>
+        <div class="content-card module-list"><div class="card-heading"><div><h3>Tasks</h3><p>Work items saved to this account</p></div><span id="taskCount" class="module-count">0</span></div><div id="taskRows" class="module-table-wrap"><p class="empty">Loading tasks…</p></div></div>
       </section>
       <section id="service-jobs" class="page inner-page" hidden>
         <div class="page-intro"><div><p class="eyebrow">SERVICE DELIVERY</p><h1>Bookings and service jobs</h1><p class="muted">Record appointments and follow each service job through completion.</p></div></div>
