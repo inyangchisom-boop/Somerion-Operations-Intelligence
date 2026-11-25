@@ -107,4 +107,33 @@ describe("Somerion Firestore security rules", function () {
     const db = testEnv.authenticatedContext("user-a").firestore();
     await assertFails(setDoc(doc(db, "privateRecords/record-1"), { value: "blocked" }));
   });
+
+  it("allows a valid Business Profile and blocks an invalid currency code", async function () {
+    const db = testEnv.authenticatedContext("user-a").firestore();
+    const ref = doc(db, "users/user-a/settings/businessProfile");
+    const profile = {
+      businessName: "Example Co",
+      industry: "commerce",
+      businessSize: "small",
+      country: "Philippines",
+      baseCurrency: "PHP",
+      createdAt,
+      updatedAt: createdAt
+    };
+    await assertSucceeds(setDoc(ref, profile));
+    await assertFails(setDoc(ref, { ...profile, baseCurrency: "PESO" }));
+  });
+
+  it("continues to allow valid existing order and inventory records", async function () {
+    const db = testEnv.authenticatedContext("user-a").firestore();
+    await assertSucceeds(setDoc(doc(db, "users/user-a/orders/order-1"), {
+      reference: "ORD-001", customer: "Test Customer", total: 25.5,
+      status: "Pending", currency: "PHP", createdAt, updatedAt: createdAt
+    }));
+    await assertSucceeds(setDoc(doc(db, "users/user-a/products/product-1"), {
+      name: "Test product", sku: "SKU-001", quantity: 12,
+      reorderLevel: 3, createdAt, updatedAt: createdAt
+    }));
+  });
+
 });
