@@ -97,3 +97,12 @@ p, label, li, td, th {
 .password-toggle{flex:0 0 auto;min-width:68px;padding:0 14px;border:1px solid #d9e1ef;border-radius:10px;background:#f2f5fb;color:#31415c;font:700 13px inherit;cursor:pointer}
 .password-toggle:hover{background:#e7edf8}
 .password-toggle:focus-visible{outline:3px solid #75a5ff;outline-offset:2px}
+
+/* Universal business profile */
+.business-profile-card{max-width:900px;padding:26px}
+.business-profile-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.business-profile-fields label{display:grid;gap:8px;color:#46546b;font-size:12px;font-weight:700}
+.business-profile-fields input,.business-profile-fields select{width:100%;min-height:44px;padding:11px 12px;border:1px solid #dfe5ee;border-radius:9px;background:#fff;color:#243149;font:inherit;font-size:14px}
+.business-profile-fields input:focus,.business-profile-fields select:focus{outline:2px solid #8da4ff;outline-offset:1px;border-color:#617de9}
+.profile-help{margin:18px 0 8px;color:#7c8799;font-size:12px;line-height:1.6}
+@media(max-width:640px){.business-profile-card{padding:18px}.business-profile-fields{grid-template-columns:1fr}}
