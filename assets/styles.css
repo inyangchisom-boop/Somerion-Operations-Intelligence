@@ -85,3 +85,7 @@ button, input, select, textarea {
 p, label, li, td, th {
   line-height: 1.65;
 }
+
+
+/* Keep owner-only navigation hidden until the backend confirms permission. */
+#labNav[hidden]{display:none!important}
