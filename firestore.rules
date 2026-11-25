@@ -87,6 +87,95 @@ service cloud.firestore {
       allow delete: if false;
     }
 
+
+    function validCustomer(data) {
+      return data.keys().hasAll(['name','company','email','phone','stage','notes','createdAt','updatedAt'])
+        && data.keys().hasOnly(['name','company','email','phone','stage','notes','createdAt','updatedAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 120
+        && data.company is string && data.company.size() <= 120
+        && data.email is string && data.email.size() <= 160
+        && data.phone is string && data.phone.size() <= 40
+        && data.stage in ['lead','prospect','customer','inactive']
+        && data.notes is string && data.notes.size() <= 2000
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    function validProject(data) {
+      return data.keys().hasAll(['name','client','status','startDate','dueDate','description','createdAt','updatedAt'])
+        && data.keys().hasOnly(['name','client','status','startDate','dueDate','description','createdAt','updatedAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 160
+        && data.client is string && data.client.size() > 0 && data.client.size() <= 120
+        && data.status in ['planned','active','on-hold','completed','cancelled']
+        && data.startDate is string && data.startDate.size() <= 10
+        && data.dueDate is string && data.dueDate.size() <= 10
+        && data.description is string && data.description.size() <= 2000
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    function validServiceJob(data) {
+      return data.keys().hasAll(['title','customer','serviceType','status','scheduledAt','location','notes','createdAt','updatedAt'])
+        && data.keys().hasOnly(['title','customer','serviceType','status','scheduledAt','location','notes','createdAt','updatedAt'])
+        && data.title is string && data.title.size() > 0 && data.title.size() <= 160
+        && data.customer is string && data.customer.size() > 0 && data.customer.size() <= 120
+        && data.serviceType is string && data.serviceType.size() > 0 && data.serviceType.size() <= 100
+        && data.status in ['requested','scheduled','in-progress','completed','cancelled']
+        && data.scheduledAt is string && data.scheduledAt.size() <= 30
+        && data.location is string && data.location.size() <= 200
+        && data.notes is string && data.notes.size() <= 2000
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    function validFinanceEntry(data) {
+      return data.keys().hasAll(['type','description','category','amount','currency','entryDate','reference','createdAt','updatedAt'])
+        && data.keys().hasOnly(['type','description','category','amount','currency','entryDate','reference','createdAt','updatedAt'])
+        && data.type in ['income','expense']
+        && data.description is string && data.description.size() > 0 && data.description.size() <= 160
+        && data.category is string && data.category.size() > 0 && data.category.size() <= 80
+        && data.amount is number && data.amount > 0
+        && data.currency is string && data.currency.matches('^[A-Z]{3}
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validOrder(request.resource.data);
+      allow update: if owns(userId)
+        && validOrder(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /users/{userId}/products/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validProduct(request.resource.data);
+      allow update: if owns(userId)
+        && validProduct(request.resource.data)
+        && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+})
+        && data.entryDate is string && data.entryDate.size() == 10
+        && data.reference is string && data.reference.size() <= 100
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+
+    match /users/{userId}/customers/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validCustomer(request.resource.data);
+      allow update: if owns(userId) && validCustomer(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+    }
+    match /users/{userId}/projects/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validProject(request.resource.data);
+      allow update: if owns(userId) && validProject(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+    }
+    match /users/{userId}/serviceJobs/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validServiceJob(request.resource.data);
+      allow update: if owns(userId) && validServiceJob(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+    }
+    match /users/{userId}/finance/{recordId} {
+      allow read, delete: if owns(userId);
+      allow create: if owns(userId) && validFinanceEntry(request.resource.data);
+      allow update: if owns(userId) && validFinanceEntry(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
+    }
+
     match /users/{userId}/orders/{recordId} {
       allow read, delete: if owns(userId);
       allow create: if owns(userId) && validOrder(request.resource.data);
