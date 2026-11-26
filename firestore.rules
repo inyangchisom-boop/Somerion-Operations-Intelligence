@@ -1,72 +1,61 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    function owns(userId) {
-      return request.auth != null && request.auth.uid == userId;
-    }
+    function signedIn() { return request.auth != null; }
+    function isOwner() { return signedIn() && request.auth.uid == 'MnTpG1cRJETCZMs8fbg6tDMkRvA2'; }
+    function owns(userId) { return signedIn() && request.auth.uid == userId; }
 
     function validOrder(data) {
-      return data.keys().hasAll([
-          'reference', 'customer', 'total', 'status', 'createdAt', 'updatedAt'
-        ])
-        && data.keys().hasOnly([
-          'reference', 'customer', 'total', 'status', 'currency', 'createdAt', 'updatedAt'
-        ])
-        && (!('currency' in data) || (
-          data.currency is string
-          && data.currency.matches('^[A-Z]{3}$')
-        ))
-        && data.reference is string
-        && data.reference.size() > 0
-        && data.reference.size() <= 60
-        && data.customer is string
-        && data.customer.size() > 0
-        && data.customer.size() <= 100
-        && data.total is number
-        && data.total >= 0
-        && data.status in ['Pending', 'Processing', 'Shipped', 'Completed', 'Cancelled']
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp;
+      return data.keys().hasAll(['reference','customer','total','status','createdAt','updatedAt'])
+        && data.keys().hasOnly(['reference','customer','total','status','currency','createdAt','updatedAt'])
+        && (!('currency' in data) || (data.currency is string && data.currency.matches('^[A-Z]{3}$')))
+        && data.reference is string && data.reference.size() > 0 && data.reference.size() <= 60
+        && data.customer is string && data.customer.size() > 0 && data.customer.size() <= 100
+        && data.total is number && data.total >= 0
+        && data.status in ['Pending','Processing','Shipped','Completed','Cancelled']
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
+    }
+    function validProduct(data) {
+      return data.keys().hasAll(['name','sku','quantity','reorderLevel','createdAt','updatedAt'])
+        && data.keys().hasOnly(['name','sku','quantity','reorderLevel','createdAt','updatedAt'])
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 120
+        && data.sku is string && data.sku.size() <= 60
+        && data.quantity is int && data.quantity >= 0
+        && data.reorderLevel is int && data.reorderLevel >= 0
+        && data.createdAt is timestamp && data.updatedAt is timestamp;
     }
 
-    function validProduct(data) {
-      return data.keys().hasAll([
-          'name', 'sku', 'quantity', 'reorderLevel', 'createdAt', 'updatedAt'
-        ])
-        && data.keys().hasOnly([
-          'name', 'sku', 'quantity', 'reorderLevel', 'createdAt', 'updatedAt'
-        ])
-        && data.name is string
-        && data.name.size() > 0
-        && data.name.size() <= 120
-        && data.sku is string
-        && data.sku.size() <= 60
-        && data.quantity is int
-        && data.quantity >= 0
-        && data.reorderLevel is int
-        && data.reorderLevel >= 0
-        && data.createdAt is timestamp
-        && data.updatedAt is timestamp;
+    match /feedback/{feedbackId} {
+      allow create: if signedIn()
+        && request.resource.data.keys().hasAll(['uid','rating','category','message','status','published','createdAt','updatedAt'])
+        && request.resource.data.keys().hasOnly(['uid','rating','category','message','status','published','createdAt','updatedAt'])
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
+        && request.resource.data.category in ['Design and appearance','Ease of use','Performance and reliability','Features and tools','Accessibility','Other']
+        && request.resource.data.message is string && request.resource.data.message.size() >= 5 && request.resource.data.message.size() <= 2000
+        && request.resource.data.status == 'pending' && request.resource.data.published == false
+        && request.resource.data.createdAt is timestamp && request.resource.data.updatedAt is timestamp;
+      allow read: if isOwner() || (signedIn() && resource.data.uid == request.auth.uid) || resource.data.published == true;
+      allow update: if isOwner()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['published','status','publishedAt','updatedAt'])
+        && request.resource.data.published is bool
+        && request.resource.data.status in ['pending','published','private','rejected']
+        && request.resource.data.updatedAt is timestamp;
+      allow delete: if isOwner();
     }
 
     match /users/{userId}/orders/{recordId} {
       allow read, delete: if owns(userId);
       allow create: if owns(userId) && validOrder(request.resource.data);
-      allow update: if owns(userId)
-        && validOrder(request.resource.data)
+      allow update: if owns(userId) && validOrder(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt;
     }
-
     match /users/{userId}/products/{recordId} {
       allow read, delete: if owns(userId);
       allow create: if owns(userId) && validProduct(request.resource.data);
-      allow update: if owns(userId)
-        && validProduct(request.resource.data)
+      allow update: if owns(userId) && validProduct(request.resource.data)
         && request.resource.data.createdAt == resource.data.createdAt;
     }
-
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /{document=**} { allow read, write: if false; }
   }
 }
