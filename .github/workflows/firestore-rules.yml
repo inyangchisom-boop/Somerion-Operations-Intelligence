@@ -26,6 +26,8 @@ jobs:
           java-version: "21"
       - name: Install dependencies
         run: npm install
+      - name: Check browser JavaScript syntax
+        run: node --check assets/app.js
       - name: Report dependency audit findings
         run: |
           npm audit --json > npm-audit.json || true
