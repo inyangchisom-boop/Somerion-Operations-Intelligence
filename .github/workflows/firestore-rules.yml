@@ -1,0 +1,42 @@
+name: Firestore Rules Tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, feature/universal-business-profile, feature/feedback-unified-security]
+
+permissions:
+  contents: read
+
+jobs:
+  firestore-rules:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Set up Java for Firebase Emulator
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Install dependencies
+        run: npm install
+      - name: Report dependency audit findings
+        run: |
+          npm audit --json > npm-audit.json || true
+          node --input-type=module -e '
+            import fs from "node:fs";
+            const report = JSON.parse(fs.readFileSync("npm-audit.json", "utf8"));
+            console.log("Vulnerability totals:", JSON.stringify(report.metadata?.vulnerabilities ?? {}));
+            for (const [name, item] of Object.entries(report.vulnerabilities ?? {})) {
+              const via = (item.via ?? []).map(v => typeof v === "string" ? v : v.title);
+              console.log(JSON.stringify({name, severity:item.severity, direct:item.isDirect, range:item.range, fixAvailable:item.fixAvailable, via}));
+            }
+          '
+      - name: Test Firestore rules in the emulator
+        run: npx firebase-tools emulators:exec --only firestore --project demo-somerion-oi "npm test"
