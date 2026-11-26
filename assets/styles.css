@@ -97,3 +97,33 @@ p, label, li, td, th {
 .password-toggle{flex:0 0 auto;min-width:68px;padding:0 14px;border:1px solid #d9e1ef;border-radius:10px;background:#f2f5fb;color:#31415c;font:700 13px inherit;cursor:pointer}
 .password-toggle:hover{background:#e7edf8}
 .password-toggle:focus-visible{outline:3px solid #75a5ff;outline-offset:2px}
+
+/* Universal business profile */
+.business-profile-card{max-width:900px;padding:26px}
+.business-profile-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}
+.business-profile-fields label{display:grid;gap:8px;color:#46546b;font-size:12px;font-weight:700}
+.business-profile-fields input,.business-profile-fields select{width:100%;min-height:44px;padding:11px 12px;border:1px solid #dfe5ee;border-radius:9px;background:#fff;color:#243149;font:inherit;font-size:14px}
+.business-profile-fields input:focus,.business-profile-fields select:focus{outline:2px solid #8da4ff;outline-offset:1px;border-color:#617de9}
+.profile-help{margin:18px 0 8px;color:#7c8799;font-size:12px;line-height:1.6}
+@media(max-width:640px){.business-profile-card{padding:18px}.business-profile-fields{grid-template-columns:1fr}}
+
+/* Universal operations modules */
+.module-form,.module-list{padding:22px;margin-bottom:18px}
+.module-form h3{margin:0 0 17px;color:#1d2b45;font-size:16px}
+.module-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:15px}
+.module-fields label{display:grid;gap:7px;color:#4b5a72;font-size:12px;font-weight:700}
+.module-fields input,.module-fields select,.module-fields textarea{width:100%;min-width:0;box-sizing:border-box;border:1px solid #dce4ef;border-radius:9px;background:#fbfcfe;color:#1b2941;padding:11px 12px;font:inherit;font-size:14px}
+.module-fields textarea{resize:vertical;min-height:72px}
+.module-fields input:focus,.module-fields select:focus,.module-fields textarea:focus{outline:2px solid #7da3ff55;border-color:#7095f5}
+.module-wide{grid-column:1/-1}
+.module-actions{display:flex;justify-content:flex-end;gap:9px;margin-top:15px}
+.module-actions button{min-height:42px}
+.module-count{display:grid;place-items:center;min-width:30px;height:30px;padding:0 8px;border-radius:10px;background:#edf3ff;color:#4e70ce;font-size:12px;font-weight:800}
+.module-table-wrap{width:100%;overflow-x:auto}
+.module-table{width:100%;border-collapse:collapse;min-width:640px}
+.module-table th,.module-table td{padding:12px 13px;text-align:left;border-bottom:1px solid #edf1f6;font-size:12px;vertical-align:middle}
+.module-table th{color:#7b8799;font-size:10px;letter-spacing:.5px;text-transform:uppercase}
+.module-table td{color:#40516b}
+.module-status{display:inline-block;padding:4px 8px;border-radius:20px;background:#eef3fb;color:#4d648d;font-size:10px;font-weight:750;text-transform:capitalize}
+.module-list .card-heading{margin-bottom:12px}
+@media(max-width:640px){.module-form,.module-list{padding:16px}.module-fields{grid-template-columns:1fr}.module-wide{grid-column:auto}.module-actions{justify-content:stretch}.module-actions button{flex:1}}

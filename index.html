@@ -36,10 +36,16 @@
 <div id="workspace" class="workspace" hidden>
   <aside class="sidebar">
     <div class="brand sidebar-brand"><span class="brand-symbol"><svg class="wing-mark" viewBox="0 0 64 64" role="img" aria-label="Somerion wing logo" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wingGradient" x1="7" y1="58" x2="57" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#38DDF3"/><stop offset=".52" stop-color="#528BFF"/><stop offset="1" stop-color="#B68BFF"/></linearGradient></defs><path d="M5 57C19 51 29 41 37 27 43 16 51 8 60 4 58 19 51 34 40 45 30 55 18 60 5 57Z" fill="url(#wingGradient)"/><path d="M9 55C24 43 37 27 51 10" fill="none" stroke="#F4FBFF" stroke-width="3.6" stroke-linecap="round"/><path d="M16 51 25 40M25 46 35 34M34 39 44 27M42 31 51 19" fill="none" stroke="#F4FBFF" stroke-width="3" stroke-linecap="round" opacity=".96"/><path d="M20 52C29 51 37 47 44 40" fill="none" stroke="#D9F7FF" stroke-width="2" stroke-linecap="round" opacity=".9"/></svg></span><span>SOMERION<small>OPERATIONS INTELLIGENCE</small></span></div>
-    <div class="workspace-switch"><span class="workspace-mark"><svg class="wing-mark" viewBox="0 0 64 64" role="img" aria-label="Somerion wing logo" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wingGradient" x1="7" y1="58" x2="57" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#38DDF3"/><stop offset=".52" stop-color="#528BFF"/><stop offset="1" stop-color="#B68BFF"/></linearGradient></defs><path d="M5 57C19 51 29 41 37 27 43 16 51 8 60 4 58 19 51 34 40 45 30 55 18 60 5 57Z" fill="url(#wingGradient)"/><path d="M9 55C24 43 37 27 51 10" fill="none" stroke="#F4FBFF" stroke-width="3.6" stroke-linecap="round"/><path d="M16 51 25 40M25 46 35 34M34 39 44 27M42 31 51 19" fill="none" stroke="#F4FBFF" stroke-width="3" stroke-linecap="round" opacity=".96"/><path d="M20 52C29 51 37 47 44 40" fill="none" stroke="#D9F7FF" stroke-width="2" stroke-linecap="round" opacity=".9"/></svg></span><span><small>WORKSPACE</small><strong>My business</strong></span><span class="switch-chevron">⌄</span></div>
+    <div class="workspace-switch"><span class="workspace-mark"><svg class="wing-mark" viewBox="0 0 64 64" role="img" aria-label="Somerion wing logo" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wingGradient" x1="7" y1="58" x2="57" y2="5" gradientUnits="userSpaceOnUse"><stop stop-color="#38DDF3"/><stop offset=".52" stop-color="#528BFF"/><stop offset="1" stop-color="#B68BFF"/></linearGradient></defs><path d="M5 57C19 51 29 41 37 27 43 16 51 8 60 4 58 19 51 34 40 45 30 55 18 60 5 57Z" fill="url(#wingGradient)"/><path d="M9 55C24 43 37 27 51 10" fill="none" stroke="#F4FBFF" stroke-width="3.6" stroke-linecap="round"/><path d="M16 51 25 40M25 46 35 34M34 39 44 27M42 31 51 19" fill="none" stroke="#F4FBFF" stroke-width="3" stroke-linecap="round" opacity=".96"/><path d="M20 52C29 51 37 47 44 40" fill="none" stroke="#D9F7FF" stroke-width="2" stroke-linecap="round" opacity=".9"/></svg></span><span><small>WORKSPACE</small><strong id="businessWorkspaceName">My business</strong></span><span class="switch-chevron">⌄</span></div>
     <p class="nav-label">WORKSPACE</p>
     <nav>
       <button data-page="overview" class="active"><span class="nav-icon">◫</span>Overview</button>
+      <button data-page="business-profile"><span class="nav-icon">◎</span>Business profile</button>
+      <button data-page="crm"><span class="nav-icon">♙</span>CRM</button>
+      <button data-page="projects"><span class="nav-icon">▣</span>Projects</button>
+      <button data-page="tasks"><span class="nav-icon">☷</span>Tasks</button>
+      <button data-page="service-jobs"><span class="nav-icon">◷</span>Bookings and jobs</button>
+      <button data-page="finance"><span class="nav-icon">＄</span>Finance</button>
       <button data-page="orders"><span class="nav-icon">▤</span>Orders</button>
       <button data-page="inventory"><span class="nav-icon">▦</span>Inventory</button>
       <button data-page="connections"><span class="nav-icon">⌘</span>Integrations<span class="nav-count">47</span></button>
@@ -64,6 +70,94 @@
         <div class="overview-grid"><div class="content-card recent-card"><div class="card-heading"><div><h3>Recent orders</h3><p>Your latest order activity</p></div><button class="text-action" data-page="orders">View all <span>→</span></button></div><div id="recent">Loading…</div></div>
           <div class="content-card signal-card"><div class="card-heading"><div><h3>Operations signals</h3><p>Things that may need your attention</p></div><span class="signal-spark">✳</span></div><div id="signals">Loading…</div><div class="signal-foot"><span class="secure-dot"></span> Signals update as your records change</div></div></div>
         <div class="bottom-promo"><div><span class="eyebrow">MAKE SOMERION YOUR HUB</span><h3>Bring your business tools together.</h3><p>Explore the growing platform directory and discover what you can connect.</p></div><button data-page="connections">Browse integrations <span>→</span></button></div>
+      </section>
+      <section id="business-profile" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">UNIVERSAL BUSINESS SETUP</p><h1>Business profile</h1><p class="muted">Tell Somerion what kind of organization this workspace supports.</p></div></div>
+        <form id="businessProfileForm" class="content-card business-profile-card">
+          <div class="business-profile-fields">
+            <label>Business or organization name<input id="businessName" required maxlength="100" autocomplete="organization" placeholder="Enter your business name"></label>
+            <label>Industry<select id="businessIndustry" required>
+              <option value="">Choose an industry</option>
+              <option value="commerce">Ecommerce and online selling</option>
+              <option value="retail">Retail and wholesale</option>
+              <option value="professional-services">Professional services</option>
+              <option value="agency">Agency and consulting</option>
+              <option value="hospitality">Hospitality and food</option>
+              <option value="health-wellness">Healthcare and wellness</option>
+              <option value="construction-trades">Construction and trades</option>
+              <option value="education">Education and training</option>
+              <option value="logistics">Logistics and transportation</option>
+              <option value="manufacturing">Manufacturing</option>
+              <option value="nonprofit-public">Nonprofit and public sector</option>
+              <option value="other">Other</option>
+            </select></label>
+            <label>Organization size<select id="businessSize" required>
+              <option value="">Choose organization size</option>
+              <option value="solo">Individual / solo operator</option>
+              <option value="small">Small business</option>
+              <option value="medium">Medium-sized business</option>
+              <option value="large">Large organization</option>
+              <option value="nonprofit">Nonprofit organization</option>
+            </select></label>
+            <label>Country or primary operating region<input id="businessCountry" required maxlength="80" autocomplete="country-name" placeholder="Enter country or region"></label>
+            <label>Base currency code<input id="businessCurrency" required minlength="3" maxlength="3" pattern="[A-Za-z]{3}" autocapitalize="characters" placeholder="e.g. USD"></label>
+          </div>
+          <p class="profile-help">Use the currency your business primarily reports in. This setting does not convert amounts in other currencies.</p>
+          <p id="businessProfileMsg" class="msg" role="status"></p>
+          <div class="dialog-actions"><button type="submit" id="saveBusinessProfile" class="primary-action">Save business profile</button></div>
+        </form>
+      </section>
+      <section id="crm" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">CUSTOMER RELATIONSHIPS</p><h1>CRM</h1><p class="muted">Keep customer and prospect details organized in your private workspace.</p></div></div>
+        <form id="customerForm" class="content-card module-form"><h3 id="customerFormTitle">Add a contact</h3><input type="hidden" name="recordId"><div class="module-fields">
+          <label>Contact name<input name="name" required maxlength="120" placeholder="Full name"></label><label>Company<input name="company" maxlength="120" placeholder="Company or organization"></label>
+          <label>Email<input name="email" type="email" maxlength="160" placeholder="name@example.com"></label><label>Phone<input name="phone" type="tel" maxlength="40" placeholder="Phone number"></label>
+          <label>Relationship<select name="stage" required><option value="lead">Lead</option><option value="prospect">Prospect</option><option value="customer">Customer</option><option value="inactive">Inactive</option></select></label>
+          <label class="module-wide">Notes<textarea name="notes" rows="2" maxlength="2000" placeholder="Relevant relationship notes"></textarea></label>
+        </div><div class="module-actions"><button type="button" class="secondary" data-module-cancel="customers" hidden>Cancel edit</button><button type="submit" class="primary-action">Save contact</button></div><p id="customerMsg" class="msg" role="status"></p></form>
+        <div class="content-card module-list"><div class="card-heading"><div><h3>Contacts</h3><p>Records belonging to this signed-in account</p></div><span id="customerCount" class="module-count">0</span></div><div id="customerRows" class="module-table-wrap"><p class="empty">Loading contacts…</p></div></div>
+      </section>
+      <section id="projects" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">DELIVERY AND EXECUTION</p><h1>Projects and tasks</h1><p class="muted">Organize work, clients, deadlines and delivery status.</p></div></div>
+        <form id="projectForm" class="content-card module-form"><h3 id="projectFormTitle">Create a project</h3><input type="hidden" name="recordId"><div class="module-fields">
+          <label>Project name<input name="name" required maxlength="160" placeholder="Project name"></label><label>Client or internal team<input name="client" required maxlength="120" placeholder="Client or team"></label>
+          <label>Status<select name="status" required><option value="planned">Planned</option><option value="active">Active</option><option value="on-hold">On hold</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></label>
+          <label>Start date<input name="startDate" type="date"></label><label>Due date<input name="dueDate" type="date"></label>
+          <label class="module-wide">Description<textarea name="description" rows="2" maxlength="2000" placeholder="Scope, goals and next steps"></textarea></label>
+        </div><div class="module-actions"><button type="button" class="secondary" data-module-cancel="projects" hidden>Cancel edit</button><button type="submit" class="primary-action">Save project</button></div><p id="projectMsg" class="msg" role="status"></p></form>
+        <div class="content-card module-list"><div class="card-heading"><div><h3>Projects</h3><p>Track planned and active work</p></div><span id="projectCount" class="module-count">0</span></div><div id="projectRows" class="module-table-wrap"><p class="empty">Loading projects…</p></div></div>
+      </section>
+      <section id="tasks" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">WORK MANAGEMENT</p><h1>Tasks</h1><p class="muted">Create actionable work items, connect them to projects and track deadlines.</p></div></div>
+        <form id="taskForm" class="content-card module-form"><h3 id="taskFormTitle">Create a task</h3><input type="hidden" name="recordId"><div class="module-fields">
+          <label>Task title<input name="title" required maxlength="160" placeholder="What needs to be done?"></label>
+          <label>Project<select name="projectId"><option value="">General / no project</option></select></label>
+          <label>Assigned to<input name="assignee" maxlength="120" placeholder="Person or team"></label>
+          <label>Status<select name="status" required><option value="todo">To do</option><option value="in-progress">In progress</option><option value="blocked">Blocked</option><option value="done">Done</option></select></label>
+          <label>Due date<input name="dueDate" type="date"></label>
+          <label class="module-wide">Details<textarea name="details" rows="2" maxlength="2000" placeholder="Steps, context or acceptance notes"></textarea></label>
+        </div><div class="module-actions"><button type="button" class="secondary" data-module-cancel="tasks" hidden>Cancel edit</button><button type="submit" class="primary-action">Save task</button></div><p id="taskMsg" class="msg" role="status"></p></form>
+        <div class="content-card module-list"><div class="card-heading"><div><h3>Tasks</h3><p>Work items saved to this account</p></div><span id="taskCount" class="module-count">0</span></div><div id="taskRows" class="module-table-wrap"><p class="empty">Loading tasks…</p></div></div>
+      </section>
+      <section id="service-jobs" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">SERVICE DELIVERY</p><h1>Bookings and service jobs</h1><p class="muted">Record appointments and follow each service job through completion.</p></div></div>
+        <form id="serviceJobForm" class="content-card module-form"><h3 id="serviceJobFormTitle">Create a service job</h3><input type="hidden" name="recordId"><div class="module-fields">
+          <label>Job title<input name="title" required maxlength="160" placeholder="Describe the job"></label><label>Customer name<input name="customer" required maxlength="120" placeholder="Customer or organization"></label>
+          <label>Service type<input name="serviceType" required maxlength="100" placeholder="e.g. Consultation, repair"></label><label>Status<select name="status" required><option value="requested">Requested</option><option value="scheduled">Scheduled</option><option value="in-progress">In progress</option><option value="completed">Completed</option><option value="cancelled">Cancelled</option></select></label>
+          <label>Appointment date and time<input name="scheduledAt" type="datetime-local"></label><label>Location<input name="location" maxlength="200" placeholder="Address or online meeting"></label>
+          <label class="module-wide">Notes<textarea name="notes" rows="2" maxlength="2000" placeholder="Instructions and job details"></textarea></label>
+        </div><div class="module-actions"><button type="button" class="secondary" data-module-cancel="serviceJobs" hidden>Cancel edit</button><button type="submit" class="primary-action">Save service job</button></div><p id="serviceJobMsg" class="msg" role="status"></p></form>
+        <div class="content-card module-list"><div class="card-heading"><div><h3>Service jobs</h3><p>Bookings and delivery status</p></div><span id="serviceJobCount" class="module-count">0</span></div><div id="serviceJobRows" class="module-table-wrap"><p class="empty">Loading service jobs…</p></div></div>
+      </section>
+      <section id="finance" class="page inner-page" hidden>
+        <div class="page-intro"><div><p class="eyebrow">FINANCIAL RECORDS</p><h1>Income and expenses</h1><p class="muted">Keep a basic record of money coming in and going out. This is not accounting or tax advice.</p></div></div>
+        <form id="financeForm" class="content-card module-form"><h3 id="financeFormTitle">Add a financial record</h3><input type="hidden" name="recordId"><div class="module-fields">
+          <label>Record type<select name="type" required><option value="income">Income</option><option value="expense">Expense</option></select></label><label>Description<input name="description" required maxlength="160" placeholder="What was this for?"></label>
+          <label>Category<input name="category" required maxlength="80" placeholder="e.g. Sales, rent, supplies"></label><label>Amount<input name="amount" type="number" min="0.01" step="0.01" required placeholder="0.00"></label>
+          <label>Currency<select name="currency" required><option value="USD">USD</option><option value="PHP">PHP</option><option value="EUR">EUR</option><option value="GBP">GBP</option><option value="NGN">NGN</option><option value="CAD">CAD</option><option value="AUD">AUD</option><option value="SGD">SGD</option><option value="INR">INR</option><option value="JPY">JPY</option></select></label>
+          <label>Date<input name="entryDate" type="date" required></label><label class="module-wide">Reference (optional)<input name="reference" maxlength="100" placeholder="Invoice, receipt or transaction reference"></label>
+        </div><div class="module-actions"><button type="button" class="secondary" data-module-cancel="finance" hidden>Cancel edit</button><button type="submit" class="primary-action">Save financial record</button></div><p id="financeMsg" class="msg" role="status"></p></form>
+        <div class="content-card module-list"><div class="card-heading"><div><h3>Financial records</h3><p>Amounts retain their recorded currency; no conversion is applied</p></div><span id="financeCount" class="module-count">0</span></div><div id="financeRows" class="module-table-wrap"><p class="empty">Loading financial records…</p></div></div>
       </section>
       <section id="orders" class="page inner-page" hidden><div class="page-intro"><div><p class="eyebrow">SALES OPERATIONS</p><h1>Orders</h1><p class="muted">Create, review and track your business orders.</p></div><button id="newOrder" class="primary-action"><span>＋</span> Add order</button></div><div class="filter-bar"><label class="search-field"><span>⌕</span><input id="orderSearch" placeholder="Search order or customer"></label><select id="orderFilter"><option value="all">All statuses</option><option>Pending</option><option>Processing</option><option>Shipped</option><option>Completed</option><option>Cancelled</option></select></div><div class="content-card table-card" id="orderRows"></div></section>
       <section id="inventory" class="page inner-page" hidden><div class="page-intro"><div><p class="eyebrow">STOCK MANAGEMENT</p><h1>Inventory</h1><p class="muted">Keep product quantities and stock levels under control.</p></div><button id="newProduct" class="primary-action"><span>＋</span> Add item</button></div><div class="filter-bar"><label class="search-field"><span>⌕</span><input id="productSearch" placeholder="Search product or SKU"></label><select id="stockFilter"><option value="all">All stock levels</option><option value="low">Low stock</option><option value="healthy">Healthy stock</option></select></div><div class="content-card table-card" id="productRows"></div></section>
