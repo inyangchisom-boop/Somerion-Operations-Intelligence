@@ -1,0 +1,9 @@
+[build]
+  command = "rm -rf dist && mkdir -p dist && cp index.html dist/index.html && cp -R assets dist/assets"
+  publish = "dist"
+
+[context.branch-deploy]
+  command = "rm -rf dist && mkdir -p dist && cp index.html dist/index.html && cp -R assets dist/assets"
+
+[context.deploy-preview]
+  command = "rm -rf dist && mkdir -p dist && cp index.html dist/index.html && cp -R assets dist/assets"
