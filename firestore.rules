@@ -144,11 +144,36 @@ service cloud.firestore {
       allow update: if owns(userId) && validProduct(request.resource.data) && request.resource.data.createdAt == resource.data.createdAt;
     }
 
+    function feedbackRateLimitReady(userId) {
+      let ratePath = /databases/$(database)/documents/feedbackRateLimits/$(userId);
+      return existsAfter(ratePath)
+        && getAfter(ratePath).data.uid == userId
+        && getAfter(ratePath).data.lastSubmittedAt == request.time;
+    }
+
+    match /feedbackRateLimits/{userId} {
+      allow get: if owns(userId);
+      allow list: if false;
+      allow create: if owns(userId)
+        && request.resource.data.keys().hasOnly(['uid','lastSubmittedAt'])
+        && request.resource.data.keys().hasAll(['uid','lastSubmittedAt'])
+        && request.resource.data.uid == userId
+        && request.resource.data.lastSubmittedAt == request.time;
+      allow update: if owns(userId)
+        && request.resource.data.keys().hasOnly(['uid','lastSubmittedAt'])
+        && request.resource.data.keys().hasAll(['uid','lastSubmittedAt'])
+        && request.resource.data.uid == userId
+        && request.resource.data.lastSubmittedAt == request.time
+        && request.time >= resource.data.lastSubmittedAt + duration.value(5, 'm');
+      allow delete: if false;
+    }
+
     match /feedback/{feedbackId} {
       allow create: if signedIn()
         && request.resource.data.keys().hasAll(['uid','rating','category','message','status','published','createdAt','updatedAt'])
         && request.resource.data.keys().hasOnly(['uid','rating','category','message','status','published','createdAt','updatedAt'])
         && request.resource.data.uid == request.auth.uid
+        && feedbackRateLimitReady(request.auth.uid)
         && request.resource.data.rating is int && request.resource.data.rating >= 1 && request.resource.data.rating <= 5
         && request.resource.data.category in ['Design and appearance','Ease of use','Performance and reliability','Features and tools','Accessibility','Other']
         && request.resource.data.message is string && request.resource.data.message.size() >= 5 && request.resource.data.message.size() <= 2000
