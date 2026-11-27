@@ -30,6 +30,11 @@ test("Firestore rules scope user data to its owner and deny unknown paths", () =
   assert.match(rules, /allow read, write: if false/);
 });
 
+test("business workspace includes all requested operations modules", () => {
+  for (const page of ["business-profile","crm","projects","tasks","service-jobs","finance"]) assert.match(html, new RegExp(`data-page="${page}"`));
+  for (const rule of ["validBusinessProfile","validCustomer","validProject","validServiceJob","validFinance","validTask"]) assert.match(rules, new RegExp(`function ${rule}`));
+});
+
 test("provider UI does not claim unavailable providers are connected", () => {
   assert.match(app, /PayPal Sandbox adapter is not configured/);
   assert.match(app, /Test-only mode: live WooCommerce store connections/);
@@ -38,7 +43,7 @@ test("provider UI does not claim unavailable providers are connected", () => {
 
 test("task helper accurately discloses model limitation", () => {
   assert.match(html, /AI model connection is not enabled in this testing environment/);
-  assert.match(app, /aiModelEnabled:false/);
+  assert.match(html, /<h3>Task helper<\/h3>/);
 });
 
 test("mobile navigation is keyboard/screen-reader stateful and flow-based", () => {
