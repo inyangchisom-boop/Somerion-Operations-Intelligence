@@ -1,0 +1,20 @@
+name: Netlify testing branch checks
+
+on:
+  push:
+    branches: [netlify-testing]
+  pull_request:
+    branches: [netlify-testing]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - run: npm run verify
