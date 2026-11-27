@@ -97,3 +97,6 @@ p, label, li, td, th {
 .password-toggle{flex:0 0 auto;min-width:68px;padding:0 14px;border:1px solid #d9e1ef;border-radius:10px;background:#f2f5fb;color:#31415c;font:700 13px inherit;cursor:pointer}
 .password-toggle:hover{background:#e7edf8}
 .password-toggle:focus-visible{outline:3px solid #75a5ff;outline-offset:2px}
+
+/* Accessible, flow-based mobile marketing navigation */
+@media(max-width:680px){.site-nav{position:relative;flex-wrap:wrap}.site-nav.menu-open .site-links{display:flex;position:static;order:3;width:100%;margin:0;padding:14px 0 8px;flex-direction:column;align-items:stretch;gap:0;border-top:1px solid #e9edf5}.site-nav.menu-open .site-links a{display:block;padding:12px 4px;font-size:14px}.site-nav.menu-open .site-actions{display:flex;position:static;order:4;width:100%;padding:0 0 14px;justify-content:flex-start;gap:10px}.site-nav.menu-open .mobile-menu{margin-left:auto}}
