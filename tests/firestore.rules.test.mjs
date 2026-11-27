@@ -179,10 +179,10 @@ describe("Somerion Firestore security rules", function () {
       message: "A valid feedback message.", status: "pending",
       published: false, createdAt, updatedAt: createdAt
     };
-    await assertFails(setDoc(doc(db, "feedback/bad-rating"), {...base, rating: 6}));
-    await assertFails(setDoc(doc(db, "feedback/bad-category"), {...base, category: "Admin access"}));
-    await assertFails(setDoc(doc(db, "feedback/short-message"), {...base, message: "No"}));
-    await assertFails(setDoc(doc(db, "feedback/forged-owner"), {...base, uid: "user-b"}));
+    await assertFails(submitFeedback(db, "bad-rating", {...base, rating: 6}));
+    await assertFails(submitFeedback(db, "bad-category", {...base, category: "Admin access"}));
+    await assertFails(submitFeedback(db, "short-message", {...base, message: "No"}));
+    await assertFails(submitFeedback(db, "forged-owner", {...base, uid: "user-b"}));
   });
 
   it("allows only the configured owner to publish a review, then allows public reading", async function () {
