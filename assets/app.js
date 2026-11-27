@@ -2,7 +2,7 @@ import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,sendEmailVerification,reload,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,onSnapshot,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {firebaseConfig,configured} from "./firebase-config.js";
-const $=id=>document.getElementById(id);const INTEGRATION_API="https://somerion-integration-api.somerion-oi.workers.dev";let auth,db,user,showAuthAfterSignOut=false,mode="login",kind="order",editId=null,orders=[],products=[],stopA,stopB,wooConnected=false,providerStatuses={},testOnlyMode=true;
+const $=id=>document.getElementById(id);const INTEGRATION_API="https://somerion-netlify-test-integration-api.somerion-oi.workers.dev";let auth,db,user,showAuthAfterSignOut=false,mode="login",kind="order",editId=null,orders=[],products=[],stopA,stopB,wooConnected=false,providerStatuses={},testOnlyMode=true;
 const say=(id,s,ok=false)=>{$(id).textContent=s;$(id).className=ok?"msg ok":"msg";};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=(n,currency="USD")=>{try{return new Intl.NumberFormat(undefined,{style:"currency",currency}).format(Number(n||0))}catch{return `${currency} ${Number(n||0).toFixed(2)}`}};
@@ -57,7 +57,7 @@ $("integrationCategory").addEventListener("change",renderIntegrations);
 renderIntegrations();
 
 
-const AGENT_API="https://somerion-agent-api-v1.somerion-oi.workers.dev";
+const AGENT_API="https://somerion-netlify-test-agent-api.somerion-oi.workers.dev";
 let agentTasks=[],agentNotifications=[],agentPoll=null,agentChatHistory=[];
 async function agentCall(path,method="GET",body){const token=await auth.currentUser.getIdToken();const response=await fetch(AGENT_API+path,{method,headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json"},...(body?{body:JSON.stringify(body)}:{})});const data=await response.json().catch(()=>({error:"Invalid agent response."}));if(!response.ok)throw new Error(data.error||"AI Task Monitor request failed.");return data}
 function agentDate(value){if(!value)return "No due date";const d=new Date(value);return isNaN(d)?"Invalid date":d.toLocaleString()}
