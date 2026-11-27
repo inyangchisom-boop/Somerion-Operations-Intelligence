@@ -4,7 +4,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main, feature/universal-business-profile, feature/feedback-unified-security]
+    branches: [main, feature/universal-business-profile, feature/feedback-unified-security, fix/website-diagnostics-accessibility-feedback]
 
 permissions:
   contents: read
