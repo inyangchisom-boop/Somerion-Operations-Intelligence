@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test:rules": "mocha --timeout 15000 tests/firestore.rules.test.mjs",
-    "test": "npm run test:rules"
+    "test": "mocha --timeout 15000 tests/*.test.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",
