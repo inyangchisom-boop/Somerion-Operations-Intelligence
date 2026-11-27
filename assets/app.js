@@ -1,7 +1,8 @@
-const copyrightYear=document.getElementById("copyrightYear");if(copyrightYear)copyrightYear.textContent=String(new Date().getFullYear());\nimport {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,sendEmailVerification,reload,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
 import {getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,onSnapshot,serverTimestamp,getDocs,query,where,runTransaction} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {firebaseConfig,configured} from "./firebase-config.js";
+const copyrightYear=document.getElementById("copyrightYear");if(copyrightYear)copyrightYear.textContent=String(new Date().getFullYear());
 const $=id=>document.getElementById(id);const INTEGRATION_API="https://somerion-integration-api.somerion-oi.workers.dev";const OWNER_UID="MnTpG1cRJETCZMs8fbg6tDMkRvA2";let auth,db,user,showAuthAfterSignOut=false,mode="login",kind="order",editId=null,orders=[],products=[],stopA,stopB,wooConnected=false,providerStatuses={},testOnlyMode=true;
 const say=(id,s,ok=false)=>{$(id).textContent=s;$(id).className=ok?"msg ok":"msg";};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
