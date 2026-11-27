@@ -4,12 +4,30 @@
   "type": "module",
   "scripts": {
     "test:rules": "mocha --timeout 15000 tests/firestore.rules.test.mjs",
-    "test": "npm run test:rules"
+    "test": "mocha --timeout 15000 tests/*.test.mjs"
   },
   "devDependencies": {
     "@firebase/rules-unit-testing": "6.0.0",
     "firebase": "13.4.0",
     "firebase-tools": "15.37.0",
     "mocha": "12.0.3"
+  },
+  "overrides": {
+    "@grpc/grpc-js": "^1.14.4",
+    "@opentelemetry/core": "^2.8.0",
+    "minimatch": "^11.0.9",
+    "rimraf": "^6.1.4",
+    "gaxios": {
+      "uuid": "^11.1.1"
+    },
+    "googleapis": {
+      "uuid": "^11.1.1"
+    },
+    "@google-cloud/cloud-sql-connector": {
+      "uuid": "^11.1.1"
+    },
+    "archiver": "^8.0.0",
+    "glob": "^14.0.6",
+    "zip-stream": "^7.0.5"
   }
 }

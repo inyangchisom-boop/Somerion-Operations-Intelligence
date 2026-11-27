@@ -1,6 +1,6 @@
 import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
 import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,sendEmailVerification,reload,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-import {getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,onSnapshot,serverTimestamp,getDocs,query,where} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+import {getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,onSnapshot,serverTimestamp,getDocs,query,where,runTransaction} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {firebaseConfig,configured} from "./firebase-config.js";
 const $=id=>document.getElementById(id);const INTEGRATION_API="https://somerion-integration-api.somerion-oi.workers.dev";const OWNER_UID="MnTpG1cRJETCZMs8fbg6tDMkRvA2";let auth,db,user,showAuthAfterSignOut=false,mode="login",kind="order",editId=null,orders=[],products=[],stopA,stopB,wooConnected=false,providerStatuses={},testOnlyMode=true;
 const say=(id,s,ok=false)=>{$(id).textContent=s;$(id).className=ok?"msg ok":"msg";};
@@ -95,13 +95,18 @@ async function loadAllFeedback(){
  $("allFeedbackList").innerHTML=rows.length?rows.map(x=>feedbackCard(x,true)).join(""):'<p class="empty">No feedback submissions yet.</p>';
 }
 async function loadPublishedReviews(){
+ const target=$("publicReviewsList"),section=$("publicReviewsSection");if(!target||!section)return;
+ target.setAttribute("aria-live","polite");
  try{
   const snap=await getDocs(query(feedbackCol(),where("published","==",true)));
   const rows=snap.docs.map(d=>d.data()).sort((a,b)=>(b.publishedAt?.seconds||0)-(a.publishedAt?.seconds||0)).slice(0,6);
-  const target=$("publicReviewsList");if(!target)return;
   target.innerHTML=rows.length?rows.map(x=>'<article class="public-review"><strong>'+("★".repeat(Number(x.rating)||0))+'</strong><span>'+esc(x.category||"Website feedback")+'</span><p>'+esc(x.message||"")+'</p></article>').join(""):'<p class="empty">No published reviews yet.</p>';
-  $("publicReviewsSection").hidden=!rows.length;
- }catch(_){/* Public reviews are optional; never block sign-in or the landing page. */}
+  section.hidden=!rows.length;
+ }catch(error){
+  target.innerHTML='<p class="empty" role="status">Published reviews are temporarily unavailable. Please try again later.</p>';
+  section.hidden=false;
+  console.warn("Somerion public reviews could not be loaded.",error);
+ }
 }
 $("feedbackForm").onsubmit=async e=>{
  e.preventDefault();if(!user||!auth.currentUser)return say("feedbackMsg","Please sign in to submit feedback.");
@@ -109,9 +114,27 @@ $("feedbackForm").onsubmit=async e=>{
  try{
   const message=$("feedbackMessage").value.trim(),rating=Number($("feedbackRating").value),category=$("feedbackCategory").value;
   if(!Number.isInteger(rating)||rating<1||rating>5||!category||message.length<5||message.length>2000)throw new Error("Choose a rating and category, and enter at least 5 characters.");
-  await addDoc(feedbackCol(),{uid:user.uid,rating,category,message,status:"pending",published:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
-  $("feedbackForm").reset();say("feedbackMsg","Thank you. Your feedback was submitted privately and will not appear publicly unless approved.",true);
-  await loadMyFeedback();if(user.uid===OWNER_UID)await loadAllFeedback();
+  const feedbackRef=doc(collection(db,"feedback"));
+  const rateRef=doc(db,"feedbackRateLimits",user.uid);
+  await runTransaction(db,async transaction=>{
+   const rateSnapshot=await transaction.get(rateRef);
+   if(rateSnapshot.exists()){
+    const last=rateSnapshot.data().lastSubmittedAt;
+    const elapsed=last?.toMillis?Date.now()-last.toMillis():0;
+    const remaining=Math.max(0,5*60*1000-elapsed);
+    if(remaining>0)throw new Error("For safety, please wait "+Math.ceil(remaining/60000)+" minute(s) before submitting another review.");
+   }
+   transaction.set(rateRef,{uid:user.uid,lastSubmittedAt:serverTimestamp()});
+   transaction.set(feedbackRef,{uid:user.uid,rating,category,message,status:"pending",published:false,createdAt:serverTimestamp(),updatedAt:serverTimestamp()});
+  });
+  $("feedbackForm").reset();
+  say("feedbackMsg","Thank you. Your feedback was saved privately and will not appear publicly unless approved.",true);
+  try{
+   await loadMyFeedback();
+   if(user.uid===OWNER_UID)await loadAllFeedback();
+  }catch(refreshError){
+   say("feedbackMsg","Your feedback was saved. The list could not refresh just now; use Refresh to reload it. "+(refreshError.message||""),true);
+  }
  }catch(err){say("feedbackMsg",err.message||"Feedback could not be submitted.");}
  finally{button.disabled=false}
 };
@@ -137,7 +160,7 @@ const passwordToggle=$("togglePassword");if(passwordToggle)passwordToggle.addEve
 function openAuth(nextMode="login"){mode=nextMode;$("marketing").hidden=true;$("workspace").hidden=true;$("auth").hidden=false;$("authButton").textContent=mode==="login"?"Sign in to Somerion":"Create account";$("toggleMode").textContent=mode==="login"?"Create an account":"Back to sign in";say("authMsg","");window.scrollTo({top:0,behavior:"smooth"})}
 document.querySelectorAll("[data-auth]").forEach(b=>b.addEventListener("click",()=>openAuth(b.dataset.auth)));
 $("backHome").onclick=()=>{$("auth").hidden=true;$("marketing").hidden=false;window.scrollTo({top:0,behavior:"smooth"})};
-$("mobileMenu").onclick=()=>{const nav=document.querySelector(".site-links");const actions=document.querySelector(".site-actions");const open=nav.style.display==="flex";nav.style.display=open?"none":"flex";actions.style.display=open?"none":"flex";if(!open){nav.style.position="absolute";nav.style.top="68px";nav.style.left="0";nav.style.right="0";nav.style.zIndex="20";nav.style.padding="18px";nav.style.background="#fff";nav.style.flexDirection="column";nav.style.borderBottom="1px solid #e8edf4";actions.style.position="absolute";actions.style.top="220px";actions.style.left="0";actions.style.right="0";actions.style.zIndex="20";actions.style.padding="0 18px 18px";actions.style.background="#fff";actions.style.justifyContent="center"}};
+$("mobileMenu").onclick=()=>{const header=document.querySelector(".site-nav"),open=header.classList.toggle("menu-open");$("mobileMenu").setAttribute("aria-expanded",String(open));$("mobileMenu").setAttribute("aria-label",open?"Close navigation":"Open navigation");$("mobileMenu").textContent=open?"✕":"☰";};
 function page(name){trackActivity("page_view",{page:name});if(name==="feedback"){loadMyFeedback().catch(e=>say("feedbackMsg","Could not load your feedback: "+e.message));if(user?.uid===OWNER_UID){$("feedbackModeration").hidden=false;loadAllFeedback().catch(e=>say("appMsg","Could not load feedback: "+e.message))}else $("feedbackModeration").hidden=true;}document.querySelectorAll(".page").forEach(p=>p.hidden=p.id!==name);document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===name));$("pageTitle").textContent=({"task-monitor":"AI Task Monitor"}[name]||name[0].toUpperCase()+name.slice(1))}
 function openRecord(type,r){kind=type;editId=r?.id||null;$("dialogTitle").textContent=(r?"Edit ":"Add ")+(type==="order"?"order":"inventory item");$("orderFields").hidden=type!=="order";$("productFields").hidden=type!=="product";$("orderFields").querySelectorAll("input,select").forEach(el=>el.disabled=type!=="order");$("productFields").querySelectorAll("input,select").forEach(el=>el.disabled=type!=="product");$("recordForm").reset();say("dialogMsg","");if(r&&type==="order"){$("reference").value=r.reference;$("customer").value=r.customer;$("total").value=r.total;$("currency").value=r.currency||"USD";$("status").value=r.status}else if(type==="order"){$("currency").value="USD"}if(r&&type==="product"){$("productName").value=r.name;$("sku").value=r.sku||"";$("quantity").value=r.quantity;$("reorder").value=r.reorderLevel} $("recordDialog").showModal()}
 $("toggleMode").onclick=()=>{mode=mode==="login"?"register":"login";$("authButton").textContent=mode==="login"?"Sign in to Somerion":"Create account";$("toggleMode").textContent=mode==="login"?"Create an account":"Back to sign in"};

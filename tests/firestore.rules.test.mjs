@@ -2,12 +2,22 @@ import { readFileSync } from "node:fs";
 import { strict as assert } from "node:assert";
 import { after, before, beforeEach, describe, it } from "mocha";
 import { initializeTestEnvironment, assertFails, assertSucceeds } from "@firebase/rules-unit-testing";
-import { doc, getDoc, setDoc, updateDoc, Timestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, Timestamp, runTransaction, serverTimestamp } from "firebase/firestore";
 
 const projectId = "demo-somerion-oi";
 let testEnv;
 const createdAt = Timestamp.fromDate(new Date("2026-01-01T00:00:00.000Z"));
 const updatedAt = Timestamp.fromDate(new Date("2026-01-02T00:00:00.000Z"));
+async function submitFeedback(db, id, feedback) {
+  const rateRef = doc(db, "feedbackRateLimits", feedback.uid);
+  const feedbackRef = doc(db, "feedback", id);
+  await runTransaction(db, async transaction => {
+    await transaction.get(rateRef);
+    transaction.set(rateRef, { uid: feedback.uid, lastSubmittedAt: serverTimestamp() });
+    transaction.set(feedbackRef, feedback);
+  });
+}
+
 
 const customer = {
   name: "Test Customer",
@@ -146,7 +156,7 @@ describe("Somerion Firestore security rules", function () {
       message: "The dashboard is clear and useful.",
       status: "pending", published: false, createdAt, updatedAt: createdAt
     };
-    await assertSucceeds(setDoc(ref, feedback));
+    await assertSucceeds(submitFeedback(userA, "feedback-a", feedback));
     await assertSucceeds(getDoc(ref));
     await assertFails(getDoc(doc(userB, "feedback/feedback-a")));
   });
@@ -169,10 +179,10 @@ describe("Somerion Firestore security rules", function () {
       message: "A valid feedback message.", status: "pending",
       published: false, createdAt, updatedAt: createdAt
     };
-    await assertFails(setDoc(doc(db, "feedback/bad-rating"), {...base, rating: 6}));
-    await assertFails(setDoc(doc(db, "feedback/bad-category"), {...base, category: "Admin access"}));
-    await assertFails(setDoc(doc(db, "feedback/short-message"), {...base, message: "No"}));
-    await assertFails(setDoc(doc(db, "feedback/forged-owner"), {...base, uid: "user-b"}));
+    await assertFails(submitFeedback(db, "bad-rating", {...base, rating: 6}));
+    await assertFails(submitFeedback(db, "bad-category", {...base, category: "Admin access"}));
+    await assertFails(submitFeedback(db, "short-message", {...base, message: "No"}));
+    await assertFails(submitFeedback(db, "forged-owner", {...base, uid: "user-b"}));
   });
 
   it("allows only the configured owner to publish a review, then allows public reading", async function () {
@@ -180,7 +190,7 @@ describe("Somerion Firestore security rules", function () {
     const ownerDb = testEnv.authenticatedContext("MnTpG1cRJETCZMs8fbg6tDMkRvA2").firestore();
     const publicDb = testEnv.unauthenticatedContext().firestore();
     const ref = doc(userDb, "feedback/review-1");
-    await assertSucceeds(setDoc(ref, {
+    await assertSucceeds(submitFeedback(userDb, "review-1", {
       uid: "user-a", rating: 5, category: "Features and tools",
       message: "I would like to see more reporting options.",
       status: "pending", published: false, createdAt, updatedAt: createdAt
@@ -198,11 +208,22 @@ describe("Somerion Firestore security rules", function () {
     assert.equal(publicResult.data().message, "I would like to see more reporting options.");
   });
 
+  it("enforces a five-minute feedback submission cooldown in Firestore rules", async function () {
+    const db = testEnv.authenticatedContext("rate-limited-user").firestore();
+    const base = {
+      uid: "rate-limited-user", rating: 4, category: "Ease of use",
+      message: "A valid message for the cooldown test.", status: "pending",
+      published: false, createdAt, updatedAt: createdAt
+    };
+    await assertSucceeds(submitFeedback(db, "first-review", base));
+    await assertFails(submitFeedback(db, "second-review", base));
+  });
+
   it("allows the configured owner to read the private moderation queue", async function () {
     const userDb = testEnv.authenticatedContext("user-a").firestore();
     const ownerDb = testEnv.authenticatedContext("MnTpG1cRJETCZMs8fbg6tDMkRvA2").firestore();
     const ref = doc(userDb, "feedback/owner-queue");
-    await assertSucceeds(setDoc(ref, {
+    await assertSucceeds(submitFeedback(userDb, "owner-queue", {
       uid: "user-a", rating: 3, category: "Other",
       message: "There is room for improvement.",
       status: "pending", published: false, createdAt, updatedAt: createdAt
