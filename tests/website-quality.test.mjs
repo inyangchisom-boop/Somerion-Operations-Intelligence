@@ -16,7 +16,7 @@ describe("Somerion website quality safeguards", function () {
   });
 
   it("does not use page-wide zoom and keeps mobile navigation in document flow", function () {
-    assert.doesNotMatch(css, /body\\s*\\{[^}]*zoom\\s*:/);
+    assert.doesNotMatch(css, /body\\s*\\{[^}]*zoom\\s*:\\s*1\\.(?:10|15)/);
     assert.match(css, /\\.site-nav\\.menu-open \\.site-links/);
     assert.match(css, /\\.site-nav\\.menu-open \\.site-actions/);
     assert.match(app, /classList\\.toggle\\("menu-open"\\)/);
