@@ -29,13 +29,27 @@ jobs:
           headers="$(curl --silent --show-error --dump-header - --output /dev/null --max-time 20 --request OPTIONS https://somerion-netlify-test-agent-api.somerion-oi.workers.dev/v1/autonomy/actions --header 'Origin: https://somerion-operations-intelligence.netlify.app' --header 'Access-Control-Request-Method: POST' --header 'Access-Control-Request-Headers: authorization,content-type,idempotency-key')"
           printf '%s\n' "$headers" | grep -Eiq '^access-control-allow-headers:.*idempotency-key'
 
-      - name: Smoke test isolated Netlify dashboard deployment
+      - name: Discover and smoke test isolated Netlify dashboard deployment
         if: github.event_name == 'push'
         shell: bash
         run: |
-          page=""
-          for attempt in $(seq 1 18); do
-            if page="$(curl --fail --silent --show-error --max-time 20 https://somerion-operations-intelligence.netlify.app/)" && printf '%s' "$page" | grep -q 'agentAutonomyForm'; then
+          for site in https://somerion-operations-intelligence.netlify.app/ https://netlify-testing--somerion-operations-intelligence.netlify.app/; do
+            page=""
+            for attempt in $(seq 1 6); do
+              if page="$(curl --fail --silent --show-error --max-time 10 "$site")" && printf '%s' "$page" | grep -q 'agentAutonomyForm' && printf '%s' "$page" | grep -q 'Autonomous agent controls'; then
+                echo "Verified isolated autonomy dashboard at $site"
+                exit 0
+              fi
+              sleep 10
+            done
+            echo "Dashboard markers not found at $site"
+            if [ -n "$page" ]; then
+              printf '%s' "$page" | grep -o '<title>[^<]*</title>' | head -n 1 || true
+              printf '%s' "$page" | grep -Eo 'Agent Task Monitor|Autonomous agent controls|agentAutonomyForm' | sort -u || true
+            fi
+          done
+          echo "No tested Netlify URL served the autonomy dashboard."
+          exit 1
               break
             fi
             sleep 10
