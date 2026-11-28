@@ -1,18 +1,19 @@
 const PROJECT_ID="somerion-oi-testing";
 const ALLOWED_ORIGIN="https://somerion-operations-intelligence.netlify.app";
-function response(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Origin":ALLOWED_ORIGIN,"Access-Control-Allow-Methods":"GET,POST,PUT,PATCH,DELETE,OPTIONS","Access-Control-Allow-Headers":"Authorization,Content-Type","Vary":"Origin","Cache-Control":"no-store","X-Content-Type-Options":"nosniff"}})}
+function response(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Origin":ALLOWED_ORIGIN,"Access-Control-Allow-Methods":"GET,POST,PUT,PATCH,DELETE,OPTIONS","Access-Control-Allow-Headers":"Authorization,Content-Type","Access-Control-Max-Age":"86400","Vary":"Origin","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"no-referrer","Permissions-Policy":"camera=(), microphone=(), geolocation=()","Strict-Transport-Security":"max-age=31536000"}})
 function decode(v){return Uint8Array.from(atob(v.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(v.length/4)*4,"=")),c=>c.charCodeAt(0))}
 async function authenticate(request){
  const h=request.headers.get("Authorization")||"";if(!h.startsWith("Bearer "))throw new Error("Authentication required.");
  const p=h.slice(7).split(".");if(p.length!==3)throw new Error("Invalid token.");
  const head=JSON.parse(new TextDecoder().decode(decode(p[0]))),claims=JSON.parse(new TextDecoder().decode(decode(p[1]))),now=Math.floor(Date.now()/1000);
- if(head.alg!=="RS256"||!head.kid||claims.aud!==PROJECT_ID||claims.iss!=="https://securetoken.google.com/"+PROJECT_ID||!claims.sub||claims.exp<=now||claims.email_verified!==true)throw new Error("Invalid, expired, or unverified testing account token.");
+ if(head.alg!=="RS256"||!head.kid||claims.aud!==PROJECT_ID||claims.iss!=="https://securetoken.google.com/"+PROJECT_ID||typeof claims.sub!=="string"||!claims.sub||claims.sub.length>128||!Number.isFinite(claims.exp)||claims.exp<=now||!Number.isFinite(claims.iat)||claims.iat>now+60||claims.email_verified!==true)throw new Error("Invalid, expired, or unverified testing account token.");
  const res=await fetch("https://www.googleapis.com/service_accounts/v1/jwk/securetoken@system.gserviceaccount.com",{cf:{cacheTtl:300,cacheEverything:true}});if(!res.ok)throw new Error("Firebase keys unavailable.");
  const keys=await res.json(),jwk=keys.keys?.find(k=>k.kid===head.kid);if(!jwk)throw new Error("Unrecognized Firebase signing key.");
  const key=await crypto.subtle.importKey("jwk",jwk,{name:"RSASSA-PKCS1-v1_5",hash:"SHA-256"},false,["verify"]);
  if(!await crypto.subtle.verify("RSASSA-PKCS1-v1_5",key,decode(p[2]),new TextEncoder().encode(p[0]+"."+p[1])))throw new Error("Invalid token signature.");
  return claims.sub;
 }
+async function enforceRateLimit(env,uid,scope,limit){const now=Date.now(),minute=Math.floor(now/60000),bucket=scope+":"+minute,resetAt=(minute+1)*60000;const row=await env.DB.prepare("INSERT INTO request_limits(uid,bucket,count,reset_at) VALUES(?,?,1,?) ON CONFLICT(uid,bucket) DO UPDATE SET count=count+1,reset_at=excluded.reset_at RETURNING count").bind(uid,bucket,resetAt).first();if(minute%10===0&&now%60000<5000)await env.DB.prepare("DELETE FROM request_limits WHERE reset_at<?").bind(now).run();return !!row&&row.count<=limit}
 function iso(){return new Date().toISOString()}
 export default {async fetch(request,env){
  const origin=request.headers.get("Origin");if(origin&&origin!==ALLOWED_ORIGIN)return new Response("Origin not allowed",{status:403});
@@ -20,8 +21,16 @@ export default {async fetch(request,env){
  const url=new URL(request.url),path=url.pathname;
  if(path==="/health"&&request.method==="GET")return response({ok:true,service:"somerion-netlify-test-agent-api",environment:"isolated-test",firebaseProject:PROJECT_ID});
  if(!path.startsWith("/v1/"))return response({error:"Not found"},404);
- let uid;try{uid=await authenticate(request)}catch(e){return response({error:e.message},401)}
+ let uid;try{uid=await authenticate(request)}catch{return response({error:"Authentication required. Sign in with a verified testing account."},401)}
  try{
+  if(["POST","PUT","PATCH"].includes(request.method)){
+   const type=request.headers.get("Content-Type")||"",declared=Number(request.headers.get("Content-Length")||0);
+   if(!type.toLowerCase().startsWith("application/json"))return response({error:"Content-Type must be application/json."},415);
+   if(declared>16384)return response({error:"Request body is too large."},413);
+   const raw=await request.clone().text();if(new TextEncoder().encode(raw).byteLength>16384)return response({error:"Request body is too large."},413);
+  }
+  const scope=path==="/v1/assistant/chat"?"agent-ai":"agent-api",limit=scope==="agent-ai"?10:60;
+  if(!await enforceRateLimit(env,uid,scope,limit))return response({error:"Rate limit reached. Please wait before trying again."},429);
   if(path==="/v1/tasks"&&request.method==="GET"){
    const {results=[]}=await env.DB.prepare("SELECT id,title,details,status,due_at,created_at,updated_at FROM agent_tasks WHERE uid=? ORDER BY created_at DESC LIMIT 100").bind(uid).all();
    return response({tasks:results});
