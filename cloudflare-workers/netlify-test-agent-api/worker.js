@@ -1,7 +1,7 @@
 import { handleAutonomyRequest } from "./autonomy.js";
 const PROJECT_ID="somerion-oi-testing";
 const ALLOWED_ORIGIN="https://somerion-operations-intelligence.netlify.app";
-function response(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Origin":ALLOWED_ORIGIN,"Access-Control-Allow-Methods":"GET,POST,PUT,PATCH,DELETE,OPTIONS","Access-Control-Allow-Headers":"Authorization,Content-Type","Access-Control-Max-Age":"86400","Vary":"Origin","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"no-referrer","Permissions-Policy":"camera=(), microphone=(), geolocation=()","Strict-Transport-Security":"max-age=31536000"}})}
+function response(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Origin":ALLOWED_ORIGIN,"Access-Control-Allow-Methods":"GET,POST,PUT,PATCH,DELETE,OPTIONS","Access-Control-Allow-Headers":"Authorization,Content-Type,Idempotency-Key","Access-Control-Max-Age":"86400","Vary":"Origin","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"no-referrer","Permissions-Policy":"camera=(), microphone=(), geolocation=()","Strict-Transport-Security":"max-age=31536000"}})}
 function decode(v){return Uint8Array.from(atob(v.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(v.length/4)*4,"=")),c=>c.charCodeAt(0))}
 async function authenticate(request){
  const h=request.headers.get("Authorization")||"";if(!h.startsWith("Bearer "))throw new Error("Authentication required.");
@@ -19,7 +19,7 @@ async function bodyWithinLimit(request,maxBytes){const reader=request.clone().bo
 function iso(){return new Date().toISOString()}
 export default {async fetch(request,env){
  const origin=request.headers.get("Origin");if(origin&&origin!==ALLOWED_ORIGIN)return new Response("Origin not allowed",{status:403});
- if(request.method==="OPTIONS")return new Response(null,{status:204,headers:{"Access-Control-Allow-Origin":ALLOWED_ORIGIN,"Access-Control-Allow-Methods":"GET,POST,PUT,PATCH,DELETE,OPTIONS","Access-Control-Allow-Headers":"Authorization,Content-Type","Access-Control-Max-Age":"86400","Vary":"Origin","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"no-referrer","Permissions-Policy":"camera=(), microphone=(), geolocation=()","Strict-Transport-Security":"max-age=31536000"}});
+ if(request.method==="OPTIONS")return new Response(null,{status:204,headers:{"Access-Control-Allow-Origin":ALLOWED_ORIGIN,"Access-Control-Allow-Methods":"GET,POST,PUT,PATCH,DELETE,OPTIONS","Access-Control-Allow-Headers":"Authorization,Content-Type,Idempotency-Key","Access-Control-Max-Age":"86400","Vary":"Origin","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"no-referrer","Permissions-Policy":"camera=(), microphone=(), geolocation=()","Strict-Transport-Security":"max-age=31536000"}});
  const url=new URL(request.url),path=url.pathname;
  if(path==="/health"&&request.method==="GET")return response({ok:true,service:"somerion-netlify-test-agent-api",environment:"isolated-test",firebaseProject:PROJECT_ID});
  if(!path.startsWith("/v1/"))return response({error:"Not found"},404);
