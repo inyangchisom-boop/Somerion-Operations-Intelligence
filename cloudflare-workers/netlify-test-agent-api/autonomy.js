@@ -75,6 +75,12 @@ async function audit(env, uid, proposalId, actionType, decision, reason) {
 }
 
 async function executeInternalAction(env, uid, proposal) {
+  const latestPolicy = await settingsFor(env, uid);
+  if (latestPolicy.paused || (!proposal.human_approved && (!latestPolicy.enabled || !latestPolicy.allowed_actions.includes(proposal.action_type)))) {
+    const error = new Error("Workspace autonomy policy changed before execution.");
+    error.code = "AUTONOMY_POLICY_CHANGED";
+    throw error;
+  }
   const payload = JSON.parse(proposal.payload_json);
   const now = nowIso();
   if (proposal.action_type === "create_task") {
@@ -189,6 +195,13 @@ export async function handleAutonomyRequest(request, env, uid, path) {
       return json({ proposal: { ...proposal, status: result.status }, result: result.result }, 201);
     } catch (error) {
       const failedAt = nowIso();
+      if (error?.code === "AUTONOMY_POLICY_CHANGED") {
+        await env.DB.batch([
+          env.DB.prepare("UPDATE agent_action_proposals SET status='pending_approval',approval_required=1,updated_at=? WHERE id=? AND uid=? AND status='executing'").bind(failedAt, id, uid),
+          env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, actionType, "approval_required", "Workspace policy changed before the action could execute; no side effect was performed.", failedAt)
+        ]);
+        return json({ proposal: { ...proposal, status: "pending_approval", approval_required: true }, message: "Workspace policy changed before execution. The action is waiting for owner approval." }, 202);
+      }
       await env.DB.batch([
         env.DB.prepare("UPDATE agent_action_proposals SET status='failed',updated_at=? WHERE id=? AND uid=? AND status='executing'").bind(failedAt, id, uid),
         env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, actionType, "failed", "Internal action failed; no success is reported.", failedAt)
@@ -231,10 +244,17 @@ export async function handleAutonomyRequest(request, env, uid, path) {
       return json({ error: "The configured daily action limit has been reached." }, 429);
     }
     try {
-      const result = await executeInternalAction(env, uid, { ...proposal, status: "executing" });
+      const result = await executeInternalAction(env, uid, { ...proposal, status: "executing", human_approved: true });
       return json({ status: result.status, result: result.result });
     } catch (error) {
       const failedAt = nowIso();
+      if (error?.code === "AUTONOMY_POLICY_CHANGED") {
+        await env.DB.batch([
+          env.DB.prepare("UPDATE agent_action_proposals SET status='pending_approval',updated_at=? WHERE id=? AND uid=? AND status='executing'").bind(failedAt, id, uid),
+          env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, proposal.action_type, "approval_required", "Emergency pause was activated before execution; no side effect was performed.", failedAt)
+        ]);
+        return json({ error: "Emergency pause was activated before execution. The proposal remains pending." }, 423);
+      }
       await env.DB.batch([
         env.DB.prepare("UPDATE agent_action_proposals SET status='failed',updated_at=? WHERE id=? AND uid=? AND status='executing'").bind(failedAt, id, uid),
         env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, proposal.action_type, "failed", "Approved internal action failed; no success is reported.", failedAt)
