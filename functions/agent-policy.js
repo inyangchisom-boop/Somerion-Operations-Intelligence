@@ -52,8 +52,8 @@ function evaluateAgentAction(input) {
     return decision("denied", "control_owner_mismatch");
   }
 
-  if (control.paused === true) {
-    return decision("denied", "automation_paused");
+  if (control.paused !== false) {
+    return decision("denied", "automation_pause_state_unverified");
   }
 
   if (control.enabled !== true || policy.enabled !== true) {
@@ -85,8 +85,8 @@ function evaluateAgentAction(input) {
     return decision("approval_required", "action_not_confirmed_reversible");
   }
 
-  if (action.externalSideEffect === true) {
-    return decision("approval_required", "external_side_effect_requires_review");
+  if (action.externalSideEffect !== false) {
+    return decision("approval_required", "external_side_effect_status_unverified");
   }
 
   if (typeof action.idempotencyKey !== "string" ||
