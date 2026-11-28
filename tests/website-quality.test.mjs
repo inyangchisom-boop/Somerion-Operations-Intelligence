@@ -8,10 +8,10 @@ const css = readFileSync("assets/styles.css", "utf8");
 
 describe("Somerion website quality safeguards", function () {
   it("provides the auth heading elements required by the login/register controller", function () {
-    assert.match(html, /<h2 id="authTitle">Welcome back\\.<\\/h2>/);
-    assert.match(html, /<p id="authSubtitle" class="muted">Sign in to pick up where your business left off\\.<\\/p>/);
-    assert.match(app, /\\$\\("authTitle"\\)\\.textContent/);
-    assert.match(app, /\\$\\("authSubtitle"\\)\\.textContent/);
+    assert.ok(html.includes('<h2 id="authTitle">Welcome back.</h2>'));
+    assert.ok(html.includes('<p id="authSubtitle" class="muted">Sign in to pick up where your business left off.</p>'));
+    assert.ok(app.includes('$("authTitle").textContent'));
+    assert.ok(app.includes('$("authSubtitle").textContent'));
   });
 
   it("uses unique SVG gradient identifiers", function () {
