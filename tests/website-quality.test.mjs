@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, existsSync } from "node:fs";
 import { strict as assert } from "node:assert";
 import { describe, it } from "mocha";
 
@@ -34,4 +34,28 @@ describe("Somerion website quality safeguards", function () {
     assert.match(app, /Published reviews are temporarily unavailable/);
     assert.match(app, /console\.warn\("Somerion public reviews could not be loaded/);
   });
+
+  it("keeps authentication headings required by the application script", function () {
+    assert.match(html, /id="authTitle"/);
+    assert.match(html, /id="authSubtitle"/);
+    assert.match(app, /\$\("authTitle"\)\.textContent/);
+    assert.match(app, /\$\("authSubtitle"\)\.textContent/);
+  });
+
+  it("keeps unique HTML IDs and accessible loading fallbacks", function () {
+    const ids = [...html.matchAll(/\\bid=["']([^"']+)["']/g)].map(match => match[1]);
+    assert.equal(new Set(ids).size, ids.length);
+    assert.match(html, /class="skip-link"/);
+    assert.match(html, /<noscript>/);
+  });
+
+  it("does not retain an ambiguous second homepage upload", function () {
+    assert.equal(existsSync("index (1).html"), false);
+  });
+
+  it("keeps one canonical description and one Open Graph title", function () {
+    assert.equal((html.match(/<meta name="description"/g) || []).length, 1);
+    assert.equal((html.match(/<meta property="og:title"/g) || []).length, 1);
+  });
+
 });
