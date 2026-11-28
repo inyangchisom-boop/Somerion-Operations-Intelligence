@@ -103,4 +103,19 @@ The model may propose actions. Trusted server code must authorize and execute th
 
 ## Current implementation status
 
-This document records the approved product direction and acceptance criteria. It is not evidence that autonomous execution, approval workflows, policy enforcement, spend controls, or emergency-stop behavior currently exist in the live product. Each capability must be implemented and tested before being presented as available.
+**Isolated test environment — implemented in source and deployed to the test Worker:**
+- Workspace autonomy settings, disabled and paused by default.
+- Server-side allowlist for internal task creation, task-status updates, and content-draft creation.
+- Approval/rejection flow, 24-hour proposal expiry, idempotency keys, atomic daily action limits, and per-user D1 scoping.
+- Audit events for settings changes, proposals, approvals, rejections, blocks, and execution outcomes.
+- Emergency pause that prevents pending approvals from executing.
+- Scheduled task-due monitoring every 15 minutes, writing idempotent in-app notifications and respecting reminder preferences.
+- Test dashboard controls are merged to the `netlify-testing` branch. Its GitHub verification workflow passed; the public Netlify deployment and browser behavior have not been independently verified.
+
+**Not implemented or enabled:**
+- No connected language model is making independent business plans or generating actions.
+- No social publishing, customer messaging, campaign management, ad-budget changes, payments, refunds, purchases, or external business-side effects.
+- No production Agent API, production Firebase project, or live customer account has been changed for this autonomy work.
+- The deployed test Worker and D1 schema are isolated test infrastructure. Their deployment metadata and Cron Trigger configuration were confirmed through Cloudflare; a live authenticated end-to-end browser test remains outstanding.
+
+This status is deliberately specific: the internal policy/execution foundation and scheduled reminders exist in the isolated test environment, but Somerion is not yet a fully autonomous marketing, sales, and operations platform. Each additional capability must be implemented and tested before being presented as available.
