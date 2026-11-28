@@ -16,13 +16,13 @@ test("scheduled reminders respect disabled reminder preferences", () => {
 });
 
 test("scheduled reminders are idempotent and workspace scoped", () => {
-  assert.match(worker, /INSERT OR IGNORE INTO agent_notifications/);
+  assert.match(worker, /ON CONFLICT\(id\) DO UPDATE SET message=excluded\.message/);
   assert.match(worker, /WHERE uid=\?/);
   assert.match(migration, /CREATE TABLE IF NOT EXISTS agent_notifications/);
-  assert.match(migration, /PRIMARY KEY \(id\)/);
+  assert.match(migration, /id TEXT PRIMARY KEY/);
 });
 
 test("notification API reads only the authenticated user's saved notifications", () => {
-  assert.match(worker, /FROM agent_notifications WHERE uid=\?/);
+  assert.match(worker, /FROM agent_notifications n JOIN agent_tasks t/);
   assert.match(worker, /SELECT id,message,created_at,read_at/);
 });
