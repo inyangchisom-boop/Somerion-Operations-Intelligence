@@ -1,6 +1,6 @@
 # Cloudflare Worker source
 
-This directory contains source snapshots fetched from the deployed Somerion Cloudflare Workers on 28 November 2026.
+This directory began with source snapshots fetched from the deployed Somerion Cloudflare Workers on 28 November 2026. The production Worker files now include proposed hardening changes on this branch; they are not deployed automatically and must not be assumed to match the live Workers until a controlled deployment is completed.
 
 - `production/integration-api/worker.js` — Integration API, currently hardcoded to test-only mode.
 - `production/agent-api/worker.js` — Agent API.
