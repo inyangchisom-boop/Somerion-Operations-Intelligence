@@ -60,7 +60,9 @@ describe("Somerion website quality safeguards", function () {
     assert.ok(app.includes('esc(item.message||"")'));
     assert.ok(app.includes("esc(v)"));
     assert.ok(app.includes("el.textContent=message"));
-    assert.doesNotMatch(app, /\\beval\\(|new Function|document\\.write/);
+    assert.ok(!app.includes("eval("));
+    assert.ok(!app.includes("new Function("));
+    assert.ok(!app.includes("document.write("));
   });
 
   it("uses unique SVG gradient identifiers", function () {
