@@ -44,6 +44,8 @@ describe("Somerion website quality safeguards", function () {
     assert.ok(app.includes('INTEGRATION_API+"/api/lab/access"'));
     assert.ok(app.includes("await hasOwnerAccess()"));
     assert.ok(app.includes("ownerAccess=result.isOwner===true&&result.labAccess===true"));
+    assert.ok(app.includes("const requestUid=user.uid"));
+    assert.ok(app.includes("ownerAccessUid!==requestUid"));
   });
 
   it("escapes user-controlled HTML output and uses textContent for chat", function () {
