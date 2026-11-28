@@ -1,3 +1,4 @@
+-- Target D1 database: somerion-agent-api-v1 (858445bb-92f3-4bd2-afd8-5f82c0b94a8c)
 -- Required before deploying the hardened production Agent API.
 -- One row per authenticated user and rate-limit bucket.
 CREATE TABLE IF NOT EXISTS request_limits (
