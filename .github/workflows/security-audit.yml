@@ -37,7 +37,7 @@ jobs:
         with:
           node-version: 24
       - name: Check isolated Worker JavaScript syntax
-        run: find cloudflare-workers -name worker.js -print0 | while IFS= read -r -d '' file; do cp "$file" /tmp/worker-check.mjs; node --check /tmp/worker-check.mjs; done
+        run: find cloudflare-workers -name worker.js -print0 | while IFS= read -r -d '' file; do node --input-type=module -e 'import { readFile } from "node:fs/promises"; await import("data:text/javascript;base64," + Buffer.from(await readFile(process.argv[1])).toString("base64"));' "$file"; done
       - name: Audit root dependencies
         run: |
           npm install --ignore-scripts --no-audit
