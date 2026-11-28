@@ -51,7 +51,7 @@ async function verifyFirebaseToken(token){
   if(!valid)throw new Error("Token signature is invalid.");
   return {uid:claims.sub,email:typeof claims.email==="string"?claims.email:null};
 }
-async function bodyWithinLimit(request,maxBytes){const reader=request.clone().body?.getReader();if(!reader)return true;let total=0;while(true){const part=await reader.read();if(part.done)return true;total+=part.value.byteLength;if(total>maxBytes){await reader.cancel();return false}}}
+async function bodyWithinLimit(request,maxBytes){const reader=request.clone().body?.getReader();if(!reader)return true;let total=0;while(true){const part=await reader.read();if(part.done)return true;total+=part.value.byteLength;if(total>maxBytes){reader.cancel().catch(()=>{});return false}}}
 async function enforceRateLimit(env,uid,scope,limit){const now=Date.now(),minute=Math.floor(now/60000),bucket=scope+":"+minute,reset=(minute+1)*60000;const row=await env.DB.prepare("INSERT INTO request_limits(uid,bucket,count,reset_at) VALUES(?,?,1,?) ON CONFLICT(uid,bucket) DO UPDATE SET count=count+1,reset_at=excluded.reset_at RETURNING count").bind(uid,bucket,reset).first();if(minute%10===0&&now%60000<5000)await env.DB.prepare("DELETE FROM request_limits WHERE reset_at<?").bind(now).run();return !!row&&row.count<=limit}
 function safeDetails(value){
   if(!value||typeof value!=="object"||Array.isArray(value))return {};
