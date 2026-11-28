@@ -3,6 +3,10 @@ import { webcrypto } from "node:crypto";
 import { after, before, describe, it } from "mocha";
 import agentWorker from "../cloudflare-workers/netlify-test-agent-api/worker.js";
 import integrationWorker from "../cloudflare-workers/netlify-test-integration-api/worker.js";
+import coreWorker from "../cloudflare-workers/production/core-api/worker.js";
+import shopifyWorker from "../cloudflare-workers/production/shopify-api/worker.js";
+import woocommerceWorker from "../cloudflare-workers/production/woocommerce-api/worker.js";
+import socialWorker from "../cloudflare-workers/production/social-api/worker.js";
 
 const PROJECT_ID = "somerion-oi-testing";
 const ORIGIN = "https://somerion-operations-intelligence.netlify.app";
@@ -12,12 +16,12 @@ let privateKey, jwk;
 function b64url(bytes) {
   return Buffer.from(bytes).toString("base64url");
 }
-async function makeToken(emailVerified = true, uid = "test-user-1") {
+async function makeToken(emailVerified = true, uid = "test-user-1", projectId = PROJECT_ID) {
   const header = b64url(Buffer.from(JSON.stringify({ alg: "RS256", kid: "test-signing-key" })));
   const now = Math.floor(Date.now() / 1000);
   const payload = b64url(Buffer.from(JSON.stringify({
-    aud: PROJECT_ID,
-    iss: "https://securetoken.google.com/" + PROJECT_ID,
+    aud: projectId,
+    iss: "https://securetoken.google.com/" + projectId,
     sub: uid,
     email: uid + "@example.test",
     email_verified: emailVerified,
@@ -174,6 +178,53 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
     const taskQuery = env.statements.find(x => x.sql.includes("FROM agent_tasks WHERE uid=?"));
     assert.ok(taskQuery);
     assert.equal(taskQuery.params[0], "user-scope-check");
+  });
+
+  it("protects all production adapter endpoints with verified Firebase tokens and security headers", async function () {
+    const token = await makeToken(true, "adapter-user", "somerion-oi");
+    for (const worker of [coreWorker, shopifyWorker, woocommerceWorker, socialWorker]) {
+      const res = await worker.fetch(request("/v1/status", token), mockEnv());
+      assert.equal(res.status, 200);
+      assert.equal(res.headers.get("x-content-type-options"), "nosniff");
+      assert.equal(res.headers.get("cache-control"), "no-store");
+    }
+  });
+
+  it("rejects unverified users on the Core API", async function () {
+    const token = await makeToken(false, "unverified-adapter-user", "somerion-oi");
+    const res = await coreWorker.fetch(request("/v1/status", token), mockEnv());
+    assert.equal(res.status, 401);
+  });
+
+  it("rate-limits unauthenticated Core API requests by source IP", async function () {
+    const env = mockEnv();
+    let last;
+    for (let i = 0; i < 61; i++) {
+      last = await coreWorker.fetch(request("/v1/status", null, {
+        headers: { "CF-Connecting-IP": "198.51.100.46" }
+      }), env);
+    }
+    assert.equal(last.status, 429);
+  });
+
+  it("bounds Core API workspace request bodies", async function () {
+    const token = await makeToken(true, "workspace-body-user", "somerion-oi");
+    const res = await coreWorker.fetch(request("/v1/workspaces", token, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: "x".repeat(17000) })
+    }), mockEnv());
+    assert.equal(res.status, 413);
+  });
+
+  it("scopes Core API workspace queries to the authenticated user", async function () {
+    const token = await makeToken(true, "workspace-scope-user", "somerion-oi");
+    const env = mockEnv();
+    const res = await coreWorker.fetch(request("/v1/workspaces", token), env);
+    assert.equal(res.status, 200);
+    const query = env.statements.find(x => x.sql.includes("FROM workspaces WHERE user_id=?"));
+    assert.ok(query);
+    assert.equal(query.params[0], "workspace-scope-user");
   });
 
   it("rejects unauthenticated Integration API requests", async function () {
