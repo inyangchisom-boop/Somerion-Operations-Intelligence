@@ -32,3 +32,7 @@ Before deploying the hardened production Agent API or Integration API, apply the
 The WooCommerce URL checks reject local/private literal hosts and non-HTTPS URLs, and the adapter refuses redirects. This is defense-in-depth, not a complete DNS-rebinding defense: a public hostname can still resolve to a private address. Keep `TEST_ONLY=true` and do not enable live WooCommerce requests until an outbound egress policy or verified-domain allowlist closes that gap and has been tested.
 
 The `adapter-request-limits.sql` migration must be applied separately to the Core, Shopify, WooCommerce, and Social D1 databases listed in its comments before those hardened Worker versions are deployed.
+
+## Static-site headers
+
+The root `_headers` file is prepared for a host that supports Netlify/Cloudflare Pages header rules. The current production site is GitHub Pages, which does not apply this file. Do not mark static-site security headers as live until the site is served through an approved header-capable host or proxy and the deployed response headers are verified. The CSP is Report-Only at this stage and must be reviewed in a real browser before enforcement.
