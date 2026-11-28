@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS agent_notifications (
   id TEXT PRIMARY KEY,
   uid TEXT NOT NULL,
   task_id TEXT NOT NULL,
+  due_at TEXT NOT NULL,
   message TEXT NOT NULL,
   created_at TEXT NOT NULL,
   read_at TEXT
