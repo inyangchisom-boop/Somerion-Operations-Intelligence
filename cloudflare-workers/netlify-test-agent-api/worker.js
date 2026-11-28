@@ -61,9 +61,8 @@ export default {async fetch(request,env){
   if(path==="/v1/notifications"&&request.method==="GET"){
    const preference=await env.DB.prepare("SELECT reminders_enabled FROM agent_preferences WHERE uid=?").bind(uid).first();
    if(preference&&preference.reminders_enabled===0)return response({notifications:[]});
-   const now=iso(),soon=new Date(Date.now()+86400000).toISOString();
-   const {results=[]}=await env.DB.prepare("SELECT id,title,status,due_at FROM agent_tasks WHERE uid=? AND status!='done' AND due_at IS NOT NULL AND due_at<=? ORDER BY due_at ASC LIMIT 20").bind(uid,soon).all();
-   return response({notifications:results.map(t=>({id:t.id,message:(t.due_at<now?"Overdue: ":"Due soon: ")+t.title,created_at:t.due_at}))});
+   const {results=[]}=await env.DB.prepare("SELECT n.id,n.message,n.created_at,n.read_at FROM agent_notifications n JOIN agent_tasks t ON t.id=n.task_id AND t.uid=n.uid AND t.due_at=n.due_at WHERE n.uid=? AND t.status!='done' ORDER BY n.created_at DESC LIMIT 50").bind(uid).all();
+   return response({notifications:results});
   }
   if(path==="/v1/preferences"&&request.method==="GET"){
    const p=await env.DB.prepare("SELECT reminders_enabled FROM agent_preferences WHERE uid=?").bind(uid).first();
@@ -88,4 +87,13 @@ export default {async fetch(request,env){
   }
   return response({error:"Endpoint not found."},404);
  }catch(e){return response({error:"The testing service encountered an internal error."},500)}
-}};
+ },async scheduled(controller,env){
+  const now=iso(),soon=new Date(Date.now()+86400000).toISOString();
+  const {results=[]}=await env.DB.prepare("SELECT t.id,t.uid,t.title,t.due_at,COALESCE(p.reminders_enabled,1) AS reminders_enabled FROM agent_tasks t LEFT JOIN agent_preferences p ON p.uid=t.uid WHERE t.status!='done' AND t.due_at IS NOT NULL AND t.due_at<=? ORDER BY t.due_at ASC LIMIT 500").bind(soon).all();
+  for(const task of results){
+   if(task.reminders_enabled===0)continue;
+   const message=(Date.parse(task.due_at)<Date.now()?"Overdue: ":"Due soon: ")+task.title;
+   const id=task.id+":due:"+task.due_at;
+   await env.DB.prepare("INSERT INTO agent_notifications(id,uid,task_id,due_at,message,created_at) VALUES(?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET message=excluded.message").bind(id,task.uid,task.id,task.due_at,message,now).run();
+  }
+ }};

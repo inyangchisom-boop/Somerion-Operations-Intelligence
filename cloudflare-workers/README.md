@@ -62,3 +62,10 @@ advertising budgets, issue refunds, make purchases, or process payments.
 Those external actions remain unsupported and must not be represented as
 available. This is source code for the isolated test environment only; it is
 not deployed and is not wired to the production Agent API.
+
+The isolated Agent API also includes a scheduled task monitor. When a 15-minute
+Cron Trigger is configured, it checks for unfinished tasks due within 24 hours,
+respects each user's reminder preference, and inserts one persistent in-app
+notification per task/due-date pair. Notifications are internal only; no email,
+SMS, or external messages are sent. The Cron Trigger is configured separately
+from the Worker source and must be verified after deployment.
