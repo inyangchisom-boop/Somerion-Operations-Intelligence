@@ -41,7 +41,7 @@ jobs:
       - name: Audit root dependencies
         run: |
           npm install --ignore-scripts --no-audit
-          npx mocha --timeout 30000 tests/website-quality.test.mjs tests/cloudflare-worker-security.test.mjs tests/autonomy-policy.test.mjs tests/autonomy-schedule.test.mjs
+          npx mocha --timeout 30000 tests/website-quality.test.mjs tests/cloudflare-worker-security.test.mjs tests/autonomy-policy.test.mjs tests/autonomy-schedule.test.mjs tests/autonomy-engine.test.mjs
           npm audit --audit-level=high
       - name: Audit Firebase Functions dependencies
         working-directory: functions
