@@ -80,20 +80,25 @@ document.addEventListener("click",async e=>{const status=e.target.closest("[data
 // Owner-only UI visibility is confirmed by the authenticated backend, never by a client-side UID.
 async function hasOwnerAccess(){
  if(!user||!auth?.currentUser)return false;
- if(ownerAccessUid===user.uid&&ownerAccess!==null)return ownerAccess;
- if(ownerAccessPromise&&ownerAccessUid===user.uid)return ownerAccessPromise;
- ownerAccessUid=user.uid;ownerAccess=null;
+ const requestUid=user.uid;
+ if(ownerAccessUid===requestUid&&ownerAccess!==null)return ownerAccess;
+ if(ownerAccessPromise&&ownerAccessUid===requestUid)return ownerAccessPromise;
+ ownerAccessUid=requestUid;ownerAccess=null;
  ownerAccessPromise=(async()=>{
   try{
-   const token=await auth.currentUser.getIdToken();
+   const currentUser=auth.currentUser;
+   if(!currentUser||currentUser.uid!==requestUid)return false;
+   const token=await currentUser.getIdToken();
    const response=await fetch(INTEGRATION_API+"/api/lab/access",{headers:{Authorization:"Bearer "+token}});
+   if(user?.uid!==requestUid||auth.currentUser?.uid!==requestUid||ownerAccessUid!==requestUid)return false;
    if(response.status===403){ownerAccess=false;return false;}
    if(!response.ok){ownerAccess=null;return false;}
    const result=await response.json();
+   if(user?.uid!==requestUid||auth.currentUser?.uid!==requestUid||ownerAccessUid!==requestUid)return false;
    ownerAccess=result.isOwner===true&&result.labAccess===true;
    return ownerAccess;
-  }catch{ownerAccess=null;return false;}
-  finally{ownerAccessPromise=null;}
+  }catch{if(ownerAccessUid===requestUid)ownerAccess=null;return false;}
+  finally{if(ownerAccessUid===requestUid)ownerAccessPromise=null;}
  })();
  return ownerAccessPromise;
 }
