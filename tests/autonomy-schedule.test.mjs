@@ -25,6 +25,6 @@ describe("isolated Agent API scheduled task monitor", function () {
 
   it("reads only the authenticated user's saved notifications", function () {
   assert.match(worker, /FROM agent_notifications n JOIN agent_tasks t/);
-  assert.match(worker, /SELECT id,message,created_at,read_at/);
+  assert.match(worker, /SELECT n\.id,n\.message,n\.created_at,n\.read_at/);
 });
 });
