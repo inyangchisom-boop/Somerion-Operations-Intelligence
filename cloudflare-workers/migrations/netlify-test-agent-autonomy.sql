@@ -65,3 +65,15 @@ CREATE TABLE IF NOT EXISTS agent_autonomy_daily_usage (
   action_count INTEGER NOT NULL DEFAULT 0 CHECK (action_count >= 0),
   PRIMARY KEY (uid, day)
 ) WITHOUT ROWID;
+
+-- Durable in-app notifications written by the scheduled test Agent monitor.
+CREATE TABLE IF NOT EXISTS agent_notifications (
+  id TEXT PRIMARY KEY,
+  uid TEXT NOT NULL,
+  task_id TEXT NOT NULL,
+  message TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  read_at TEXT
+);
+CREATE INDEX IF NOT EXISTS idx_agent_notifications_user_created
+  ON agent_notifications(uid, created_at DESC);
