@@ -36,3 +36,29 @@ The `adapter-request-limits.sql` migration must be applied separately to the Cor
 ## Static-site headers
 
 The root `_headers` file is prepared for a host that supports Netlify/Cloudflare Pages header rules. The current production site is GitHub Pages, which does not apply this file. Do not mark static-site security headers as live until the site is served through an approved header-capable host or proxy and the deployed response headers are verified. The CSP is Report-Only at this stage and must be reviewed in a real browser before enforcement.
+
+## Bounded autonomy engine (isolated test only)
+
+The isolated Netlify Test Agent API now has a staged policy/approval engine in
+`netlify-test-agent-api/autonomy.js`. Its schema is in
+`migrations/netlify-test-agent-autonomy.sql` and must be applied only to the
+isolated `somerion-netlify-test-db` database before deploying this test Worker.
+
+The first supported actions are intentionally limited to internal workspace
+operations:
+- `create_task` — create a task in the signed-in user's test workspace.
+- `update_task_status` — update a task owned by that user.
+- `create_content_draft` — save a draft; it does not publish or send anything.
+
+Autonomy defaults to disabled and paused. Workspace settings are opt-in,
+permissions are allowlisted, daily action slots are reserved atomically, and
+all decisions/actions are recorded in the workspace audit table. A pending
+proposal can be explicitly approved or rejected by its authenticated owner.
+Idempotency keys prevent a repeated client request from creating a second
+proposal. Daily limits are also enforced when an owner approves a proposal.
+
+These endpoints do not publish social content, send customer messages, change
+advertising budgets, issue refunds, make purchases, or process payments.
+Those external actions remain unsupported and must not be represented as
+available. This is source code for the isolated test environment only; it is
+not deployed and is not wired to the production Agent API.
