@@ -127,8 +127,8 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
     const env = mockEnv();
     const res = await agentWorker.fetch(request("/v1/tasks", token, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Content-Length": "17000" },
-      body: JSON.stringify({ title: "too small for declared length" })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ title: "x".repeat(17000) })
     }), env);
     assert.equal(res.status, 413);
   });
@@ -174,8 +174,8 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
     const token = await makeToken(true, "integration-body-user");
     const res = await integrationWorker.fetch(request("/api/activity", token, {
       method: "POST",
-      headers: { "Content-Type": "application/json", "Content-Length": "17000" },
-      body: JSON.stringify({ eventType: "login" })
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ eventType: "login", details: "x".repeat(17000) })
     }), mockEnv());
     assert.equal(res.status, 413);
   });
