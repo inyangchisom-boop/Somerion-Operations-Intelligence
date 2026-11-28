@@ -180,6 +180,40 @@
           <div class="agent-side-column">
             <section class="content-card agent-chat-card"><div class="card-heading"><div><h3>Task helper</h3><p>Get summaries and priorities from your saved tasks.</p></div><span class="agent-live"><i></i> Connected</span></div><div id="agentChatLog" class="agent-chat-log" aria-live="polite"><div class="agent-chat-bubble assistant">Hello. I can summarize your saved tasks, find overdue work, check upcoming due dates and suggest what to focus on next. This helper uses your task data; an external AI model is not connected yet.</div></div><form id="agentChatForm" class="agent-chat-form"><textarea id="agentChatInput" rows="2" maxlength="2500" placeholder="Ask about overdue work, due dates, completed tasks or priorities…" required></textarea><button id="agentChatSend" type="submit">Ask task helper →</button></form><p class="agent-disclaimer">Uses only tasks saved in this workspace. It does not connect to external apps or send email/SMS. AI model connection is not enabled in this testing environment.</p></section>
             <section class="content-card agent-alert-card"><div class="card-heading"><div><h3>Task alerts</h3><p>Reminders for tasks due within 24 hours or overdue.</p></div><span class="agent-spark">◷</span></div><label class="agent-reminder-toggle"><input id="agentReminders" type="checkbox" checked> Enable in-app reminders</label><div id="agentNotifications"><p class="empty">No alerts yet.</p></div></section>
+            <section class="content-card agent-autonomy-card">
+              <div class="card-heading"><div><h3>Autonomous agent controls</h3><p>Isolated testing only. Actions stay inside this workspace.</p></div><span id="agentAutonomyBadge" class="agent-autonomy-badge">Paused</span></div>
+              <form id="agentAutonomyForm" class="agent-autonomy-form">
+                <label class="agent-autonomy-check"><input id="agentAutonomyEnabled" type="checkbox"> Enable bounded autonomy</label>
+                <label class="agent-autonomy-check"><input id="agentAutonomyPaused" type="checkbox" checked> Emergency pause</label>
+                <fieldset><legend>Pre-authorized internal actions</legend>
+                  <label class="agent-autonomy-check"><input id="agentAllowCreateTask" type="checkbox"> Create internal tasks</label>
+                  <label class="agent-autonomy-check"><input id="agentAllowUpdateTask" type="checkbox"> Update task status</label>
+                  <label class="agent-autonomy-check"><input id="agentAllowDraft" type="checkbox"> Save content drafts (never publish)</label>
+                </fieldset>
+                <label>Maximum actions per day<input id="agentAutonomyLimit" type="number" min="1" max="50" value="10" required></label>
+                <div class="agent-autonomy-buttons"><button type="submit">Save autonomy settings</button><button type="button" id="agentEmergencyPause" class="secondary">Pause immediately</button></div>
+              </form>
+              <p id="agentAutonomyMsg" class="msg" role="status"></p>
+              <div class="agent-autonomy-propose">
+                <h4>Test an autonomous task</h4>
+                <form id="agentAutonomyTaskForm">
+                  <label>Task title<input id="agentActionTaskTitle" maxlength="160" required placeholder="e.g. Review today's orders"></label>
+                  <label>Details<textarea id="agentActionTaskDetails" maxlength="2000" rows="2" placeholder="What should be done?"></textarea></label>
+                  <button type="submit">Send task to agent</button>
+                </form>
+                <h4>Prepare a marketing content draft</h4>
+                <form id="agentAutonomyDraftForm">
+                  <label>Channel<select id="agentDraftChannel"><option value="instagram">Instagram</option><option value="facebook">Facebook</option><option value="tiktok">TikTok</option><option value="linkedin">LinkedIn</option><option value="email">Email</option><option value="other">Other</option></select></label>
+                  <label>Draft title<input id="agentDraftTitle" maxlength="160" required></label>
+                  <label>Draft content<textarea id="agentDraftBody" maxlength="5000" rows="3" required></textarea></label>
+                  <button type="submit">Save content draft</button>
+                </form>
+              </div>
+              <div class="agent-autonomy-section"><h4>Action proposals and approvals</h4><div id="agentProposalList"><p class="empty">Loading proposals…</p></div></div>
+              <div class="agent-autonomy-section"><h4>Saved content drafts</h4><div id="agentDraftList"><p class="empty">No drafts loaded.</p></div></div>
+              <div class="agent-autonomy-section"><h4>Recent agent activity</h4><div id="agentAuditList"><p class="empty">Loading audit events…</p></div></div>
+              <p class="agent-disclaimer">This test engine can create internal tasks, update task status and save drafts only. It cannot publish posts, send messages, change ad spend, issue refunds, purchase items or make payments.</p>
+            </section>
           </div>
         </div>
       </section>
