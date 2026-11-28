@@ -5,7 +5,7 @@ import { handleAutonomyRequest } from "../cloudflare-workers/netlify-test-agent-
 function mockEnv() {
   const state = {
     settings: new Map(), proposals: new Map(), tasks: new Map(),
-    drafts: new Map(), audits: [], daily: new Map()
+    drafts: new Map(), audits: [], daily: new Map(), pauseOnQuota: false
   };
   const clone = value => value ? structuredClone(value) : null;
   async function run(sql, p) {
@@ -91,7 +91,10 @@ function mockEnv() {
           }
           if (sql.includes("INSERT INTO agent_autonomy_daily_usage")) {
             const key=params[0]+":"+params[1],limit=params[2],count=state.daily.get(key)||0;
-            if(count>=limit)return null;state.daily.set(key,count+1);return {action_count:count+1};
+            if(count>=limit)return null;
+            state.daily.set(key,count+1);
+            if(state.pauseOnQuota){const current=state.settings.get(params[0]);state.settings.set(params[0],{...current,paused:1});state.pauseOnQuota=false;}
+            return {action_count:count+1};
           }
           return null;
         },
@@ -183,6 +186,20 @@ describe("Isolated bounded autonomy execution engine", function () {
     assert.equal(first.status,201);
     assert.equal(second.status,429);
     assert.equal(env.state.tasks.size,1);
+  });
+
+
+  it("rechecks the emergency pause after quota reservation and before execution", async function () {
+    const env=mockEnv();
+    await handleAutonomyRequest(req("/v1/autonomy/settings","PUT",{enabled:true,paused:false,allowed_actions:["create_task"],daily_action_limit:3}),env,"user-a","/v1/autonomy/settings");
+    env.state.pauseOnQuota=true;
+    const res=await handleAutonomyRequest(req("/v1/autonomy/actions","POST",{action_type:"create_task",payload:{title:"Must not run",details:"",due_at:null}},{"Idempotency-Key":"pause-race-test-01"}),env,"user-a","/v1/autonomy/actions");
+    const data=await json(res);
+    assert.equal(res.status,202);
+    assert.equal(data.proposal.status,"pending_approval");
+    assert.equal(env.state.tasks.size,0);
+    assert.equal([...env.state.proposals.values()][0].status,"pending_approval");
+    assert.ok(env.state.audits.some(x=>x.decision==="approval_required"&&x.reason.includes("policy changed")));
   });
 
   it("saves content drafts internally without external publication", async function () {
