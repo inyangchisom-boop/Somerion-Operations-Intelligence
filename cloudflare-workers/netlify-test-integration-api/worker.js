@@ -75,6 +75,8 @@ export default {
   const url=new URL(request.url),path=url.pathname;
   if(path==="/health"&&request.method==="GET")return json({ok:true,service:"somerion-netlify-test-integration-api",environment:"isolated-test",firebaseProject:PROJECT_ID,testOnly:true,providerActionsEnabled:false});
   if(!path.startsWith("/api/"))return json({error:"Not found"},404);
+  const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+  if(!await enforceRateLimit(env,"ip:"+ip,"integration-preauth",60))return json({error:"Rate limit reached. Please wait before trying again."},429);
   let identity;
   try{
     const authorization=request.headers.get("Authorization")||"";
