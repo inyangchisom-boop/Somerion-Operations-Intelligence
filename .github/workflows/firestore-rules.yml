@@ -26,8 +26,12 @@ jobs:
           java-version: "21"
       - name: Install dependencies
         run: npm install
-      - name: Check browser JavaScript syntax
-        run: node --check assets/app.js
+      - name: Check browser and server JavaScript syntax
+        run: |
+          node --check assets/app.js
+          node --check functions/index.js
+          node --check tests/website-quality.test.mjs
+          node --check tests/firestore.rules.test.mjs
       - name: Report dependency audit findings
         run: |
           npm audit --json > npm-audit.json || true
@@ -40,5 +44,7 @@ jobs:
               console.log(JSON.stringify({name, severity:item.severity, direct:item.isDirect, range:item.range, fixAvailable:item.fixAvailable, via}));
             }
           '
+      - name: Fail on high or critical dependency vulnerabilities
+        run: npm audit --audit-level=high
       - name: Test Firestore rules in the emulator
         run: npx firebase-tools emulators:exec --only firestore --project demo-somerion-oi "npm test"
