@@ -31,7 +31,7 @@ test("autonomy action requests use idempotency keys and explicit approval routes
 
 test("test dashboard discloses that external actions are not enabled", () => {
   assert.match(html, /cannot publish posts, send messages, change ad spend, issue refunds, purchase items or make payments/i);
-  assert.match(app, /AI model connection is not enabled in this testing environment/);
+  assert.match(html, /AI model connection is not enabled in this testing environment/);
 });
 
 test("autonomy controls have mobile responsive styling", () => {
