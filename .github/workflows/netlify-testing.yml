@@ -18,3 +18,13 @@ jobs:
         with:
           node-version: 22
       - run: npm run verify
+
+      - name: Smoke test isolated Agent API
+        shell: bash
+        run: |
+          health="$(curl --fail --silent --show-error --max-time 20 https://somerion-netlify-test-agent-api.somerion-oi.workers.dev/health)"
+          node -e 'const x=JSON.parse(process.argv[1]); if(x.ok!==true || x.environment!=="isolated-test" || x.firebaseProject!=="somerion-oi-testing") process.exit(1);' "$health"
+          status="$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' --max-time 20 https://somerion-netlify-test-agent-api.somerion-oi.workers.dev/v1/autonomy/settings)"
+          test "$status" = "401"
+          headers="$(curl --silent --show-error --dump-header - --output /dev/null --max-time 20 --request OPTIONS https://somerion-netlify-test-agent-api.somerion-oi.workers.dev/v1/autonomy/actions --header 'Origin: https://somerion-operations-intelligence.netlify.app' --header 'Access-Control-Request-Method: POST' --header 'Access-Control-Request-Headers: authorization,content-type,idempotency-key')"
+          printf '%s\n' "$headers" | grep -Eiq '^access-control-allow-headers:.*idempotency-key'
