@@ -97,6 +97,28 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
     globalThis.fetch = originalFetch;
   });
 
+  it("rate-limits unauthenticated Agent API requests by source IP", async function () {
+    const env = mockEnv();
+    let last;
+    for (let i = 0; i < 61; i++) {
+      last = await agentWorker.fetch(request("/v1/tasks", null, {
+        headers: { "CF-Connecting-IP": "198.51.100.44" }
+      }), env);
+    }
+    assert.equal(last.status, 429);
+  });
+
+  it("rate-limits unauthenticated Integration API requests by source IP", async function () {
+    const env = mockEnv();
+    let last;
+    for (let i = 0; i < 61; i++) {
+      last = await integrationWorker.fetch(request("/api/integrations", null, {
+        headers: { "CF-Connecting-IP": "198.51.100.45" }
+      }), env);
+    }
+    assert.equal(last.status, 429);
+  });
+
   it("rejects unauthenticated Agent API requests", async function () {
     const res = await agentWorker.fetch(request("/v1/tasks", null), mockEnv());
     assert.equal(res.status, 401);
@@ -137,7 +159,9 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
     const env = mockEnv();
     let last;
     for (let i = 0; i < 61; i++) {
-      last = await agentWorker.fetch(request("/v1/tasks", token), env);
+      last = await agentWorker.fetch(request("/v1/tasks", token, {
+        headers: { "CF-Connecting-IP": "198.51.100." + (i + 1) }
+      }), env);
     }
     assert.equal(last.status, 429);
   });
