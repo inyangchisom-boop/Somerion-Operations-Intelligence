@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="What we currently know about browser storage and similar technologies on Somerion.">
+<meta name="theme-color" content="#101b35">
+<title>Cookies & Browser Storage | Somerion Operations Intelligence</title>
+<style>
+:root{color-scheme:light;--ink:#17233d;--muted:#64748b;--line:#e5eaf2;--blue:#4268f5;--bg:#f6f8fc}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.72 Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif}
+header{background:#101b35;color:#fff;padding:20px max(22px,calc((100% - 920px)/2));display:flex;align-items:center;justify-content:space-between;gap:16px}
+.brand{font-size:14px;font-weight:800;letter-spacing:1.6px}.brand small{display:block;color:#9fb2d8;font-size:9px;letter-spacing:1.5px}
+header a{color:#dce6ff;text-decoration:none;font-size:14px}
+main{max-width:920px;margin:42px auto;padding:0 22px 64px}
+.hero{background:linear-gradient(120deg,#142747,#243e71);color:#fff;padding:34px;border-radius:20px;margin-bottom:24px}
+.kicker{font-size:11px;letter-spacing:1.7px;color:#a9c1ff;font-weight:800}.hero h1{font-size:clamp(30px,5vw,44px);line-height:1.15;margin:12px 0}.hero p{color:#d8e3f7;margin:0}.updated{font-size:13px;color:#c1d0e9;margin-top:18px}
+article{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px;margin:16px 0;box-shadow:0 6px 24px #14274708}
+h2{font-size:21px;line-height:1.3;margin:0 0 12px}h3{font-size:16px;margin:22px 0 6px}p,li{color:#42516b}ul{padding-left:22px}a{color:#3159d9}strong{color:#1d2a43}.notice{background:#f0f5ff;border-left:3px solid var(--blue);padding:14px 16px;border-radius:8px;color:#354665}
+footer{max-width:920px;margin:0 auto;padding:22px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:13px}footer a{margin-right:16px;text-decoration:none}
+@media(max-width:600px){header{padding:16px 20px}main{margin:22px auto}article{padding:21px}.hero{padding:26px}footer{padding:20px;display:block}footer span{display:block;margin-top:10px}}
+</style></head><body>
+<header><a class="brand" href="./index.html">SOMERION<small>OPERATIONS INTELLIGENCE</small></a><a href="./index.html">← Back to website</a></header>
+<main><section class="hero"><div class="kicker">SOMERION · TRUST & TRANSPARENCY</div><h1>Cookies & Browser Storage</h1><p>What we currently know about browser storage and similar technologies on Somerion.</p><div class="updated">Effective date: 28 November 2026 · Version 1.0</div></section>
+
+<article><h2>1. What this page covers</h2><p>Cookies are small data files stored by a website. Browser storage also includes technologies such as local storage and IndexedDB. Authentication and security services may use these technologies to keep a session working and protect accounts.</p><p class="notice">This disclosure is based on a review of the current website source. I did not run a complete browser storage inspection across every browser, device, authentication state or third-party service. I cannot verify every cookie or storage key that may be set at runtime.</p></article>
+<article><h2>2. Essential authentication and service storage</h2><p>Somerion uses Firebase Authentication. Firebase may use browser storage and related technologies to maintain authentication state, support sign-in and protect the account session. These functions are needed for the signed-in workspace to operate. Your browser may also store ordinary preferences or temporary technical state required by the application.</p></article>
+<article><h2>3. Analytics and advertising</h2><p>In the reviewed frontend source, I did not find an explicit Google Analytics, advertising pixel or common third-party product analytics SDK integration. This source review is not a guarantee that no infrastructure-level logs or third-party technologies process technical data. Somerion does not describe advertising cookies as a current feature of this website.</p></article>
+<article><h2>4. Third-party services</h2><p>The site loads hosted fonts from Google Fonts and uses Firebase services. These providers may process technical request information under their own policies. If you use a provider integration, the external provider may also use its own cookies, tokens or browser storage when you visit its service or complete authorization.</p></article>
+<article><h2>5. Managing storage</h2><p>You can review and clear cookies and site data through your browser settings. Blocking all storage or clearing authentication data may sign you out or prevent parts of the workspace from working. Browser controls differ by device and browser. Removing browser data does not necessarily delete information already stored in Firebase, Cloudflare or an external provider system.</p></article>
+<article><h2>6. Updates and contact</h2><p>If the website adds analytics, advertising, preference or other non-essential tracking technologies, this page should be updated to explain them and any applicable choices. Questions: <a href="mailto:somerion.operations@gmail.com">somerion.operations@gmail.com</a>.</p></article>
+</main><footer><span>© 2026 Somerion Operations Intelligence</span><span><a href="./privacy.html">Privacy</a><a href="./terms.html">Terms</a><a href="./cookies.html">Cookies & storage</a><a href="mailto:somerion.operations@gmail.com">Contact</a></span></footer>
+</body></html>
