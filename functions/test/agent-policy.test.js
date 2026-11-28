@@ -20,7 +20,7 @@ function fixture(overrides = {}) {
       reversible: true,
       externalSideEffect: false,
       estimatedCostMinor: 0,
-      idempotencyKey: "test-key-12345678"
+      idempotencyKey: "unit-test-key-00000000"
     },
     usage: { actionsUsedToday: 0, spendUsedTodayMinor: 0 },
     ...overrides
