@@ -1,5 +1,6 @@
 import { strict as assert } from "node:assert";
 import { webcrypto } from "node:crypto";
+import { readFileSync } from "node:fs";
 import { after, before, describe, it } from "mocha";
 import agentWorker from "../cloudflare-workers/netlify-test-agent-api/worker.js";
 import integrationWorker from "../cloudflare-workers/netlify-test-integration-api/worker.js";
@@ -185,6 +186,27 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
     const taskQuery = env.statements.find(x => x.sql.includes("FROM agent_tasks WHERE uid=?"));
     assert.ok(taskQuery);
     assert.equal(taskQuery.params[0], "user-scope-check");
+  });
+
+  it("rejects unsafe WooCommerce URL forms before any outbound request", function () {
+    const source = readFileSync("cloudflare-workers/production/integration-api/worker.js", "utf8");
+    const start = source.indexOf("function httpsStore(v)");
+    const end = source.indexOf("async function wc", start);
+    assert.ok(start >= 0 && end > start, "WooCommerce URL validator must exist");
+    const httpsStore = new Function(source.slice(start, end) + "; return httpsStore;")();
+    assert.equal(httpsStore("https://store.example.com"), true);
+    for (const url of [
+      "http://store.example.com",
+      "https://localhost",
+      "https://127.0.0.1",
+      "https://10.0.0.8",
+      "https://192.168.1.2",
+      "https://127.0.0.1.nip.io",
+      "https://store.example.com:8443",
+      "https://store.example.com/private-path",
+      "https://user:pass@store.example.com"
+    ]) assert.equal(httpsStore(url), false, url);
+    assert.ok(source.includes('redirect:"manual"'), "WooCommerce redirects must not be followed");
   });
 
   it("protects all production adapter endpoints with verified Firebase tokens and security headers", async function () {
