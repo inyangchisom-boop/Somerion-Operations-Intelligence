@@ -14,6 +14,7 @@ async function authenticate(request){
  return claims.sub;
 }
 async function enforceRateLimit(env,uid,scope,limit){const now=Date.now(),minute=Math.floor(now/60000),bucket=scope+":"+minute,resetAt=(minute+1)*60000;const row=await env.DB.prepare("INSERT INTO request_limits(uid,bucket,count,reset_at) VALUES(?,?,1,?) ON CONFLICT(uid,bucket) DO UPDATE SET count=count+1,reset_at=excluded.reset_at RETURNING count").bind(uid,bucket,resetAt).first();if(minute%10===0&&now%60000<5000)await env.DB.prepare("DELETE FROM request_limits WHERE reset_at<?").bind(now).run();return !!row&&row.count<=limit}
+async function bodyWithinLimit(request,maxBytes){const reader=request.clone().body?.getReader();if(!reader)return true;let total=0;while(true){const part=await reader.read();if(part.done)return true;total+=part.value.byteLength;if(total>maxBytes){await reader.cancel();return false}}}
 function iso(){return new Date().toISOString()}
 export default {async fetch(request,env){
  const origin=request.headers.get("Origin");if(origin&&origin!==ALLOWED_ORIGIN)return new Response("Origin not allowed",{status:403});
@@ -27,7 +28,7 @@ export default {async fetch(request,env){
    const type=request.headers.get("Content-Type")||"",declared=Number(request.headers.get("Content-Length")||0);
    if(!type.toLowerCase().startsWith("application/json"))return response({error:"Content-Type must be application/json."},415);
    if(declared>16384)return response({error:"Request body is too large."},413);
-   const raw=await request.clone().text();if(new TextEncoder().encode(raw).byteLength>16384)return response({error:"Request body is too large."},413);
+   if(!await bodyWithinLimit(request,16384))return response({error:"Request body is too large."},413);
   }
   const scope=path==="/v1/assistant/chat"?"agent-ai":"agent-api",limit=scope==="agent-ai"?10:60;
   if(!await enforceRateLimit(env,uid,scope,limit))return response({error:"Rate limit reached. Please wait before trying again."},429);
