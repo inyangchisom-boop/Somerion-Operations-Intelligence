@@ -27,6 +27,8 @@ These snapshots are not automatically synchronized with Cloudflare. Any dashboar
 
 ## Pending production migrations and SSRF limitation
 
-Before deploying the hardened production Agent API or Integration API, apply the matching SQL migration in `migrations/` to that Worker's own D1 database. The Agent API and Integration API use separate D1 databases; do not apply one migration to the wrong database.
+Before deploying the hardened production Agent API or Integration API, apply the matching SQL migration in `migrations/` to that Worker's own D1 database. The Agent API, Integration API, Core API, Shopify adapter, WooCommerce adapter, and Social adapter use separate D1 databases. Apply the matching migration separately to each named database; do not assume one migration run updates the others.
 
 The WooCommerce URL checks reject local/private literal hosts and non-HTTPS URLs, and the adapter refuses redirects. This is defense-in-depth, not a complete DNS-rebinding defense: a public hostname can still resolve to a private address. Keep `TEST_ONLY=true` and do not enable live WooCommerce requests until an outbound egress policy or verified-domain allowlist closes that gap and has been tested.
+
+The `adapter-request-limits.sql` migration must be applied separately to the Core, Shopify, WooCommerce, and Social D1 databases listed in its comments before those hardened Worker versions are deployed.
