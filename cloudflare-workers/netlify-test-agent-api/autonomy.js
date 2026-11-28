@@ -208,6 +208,8 @@ export async function handleAutonomyRequest(request, env, uid, path) {
       ]);
       return json({ status: "rejected" });
     }
+    const currentSettings = await settingsFor(env, uid);
+    if (currentSettings.paused) return json({ error: "Autonomy is paused. Resume the workspace agent before approving actions." }, 423);
     const now = nowIso();
     const claimed = await env.DB.prepare("UPDATE agent_action_proposals SET status='executing',updated_at=? WHERE id=? AND uid=? AND status='pending_approval'").bind(now, id, uid).run();
     if (!claimed.meta?.changes) return json({ error: "This proposal was already processed." }, 409);
