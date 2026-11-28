@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS agent_action_proposals (
   idempotency_key TEXT NOT NULL,
   action_type TEXT NOT NULL,
   payload_json TEXT NOT NULL,
-  status TEXT NOT NULL CHECK (status IN ('executing','pending_approval','executed','rejected','expired','blocked_limit')),
+  status TEXT NOT NULL CHECK (status IN ('executing','pending_approval','executed','rejected','expired','blocked_limit','failed')),
   approval_required INTEGER NOT NULL DEFAULT 0 CHECK (approval_required IN (0,1)),
   result_json TEXT,
   created_at TEXT NOT NULL,
