@@ -46,6 +46,23 @@ describe("Somerion website quality safeguards", function () {
     assert.ok(app.includes("ownerAccess=result.isOwner===true&&result.labAccess===true"));
   });
 
+  it("escapes user-controlled HTML output and uses textContent for chat", function () {
+    const escapeLine = app.split("\n").find(line => line.startsWith("const esc="));
+    assert.ok(escapeLine, "a shared HTML-escaping function must exist");
+    const escapeHtml = new Function("return (" + escapeLine.slice("const esc=".length).replace(/;$/, "") + ");")();
+    assert.equal(
+      escapeHtml('<img src=x onerror="alert(1)"> & \'quoted\''),
+      "&lt;img src=x onerror=&quot;alert(1)&quot;&gt; &amp; &#39;quoted&#39;"
+    );
+    assert.ok(app.includes("esc(t.title)"));
+    assert.ok(app.includes("esc(t.details)"));
+    assert.ok(app.includes("esc(n.message)"));
+    assert.ok(app.includes('esc(item.message||"")'));
+    assert.ok(app.includes("esc(v)"));
+    assert.ok(app.includes("el.textContent=message"));
+    assert.doesNotMatch(app, /\\beval\\(|new Function|document\\.write/);
+  });
+
   it("uses unique SVG gradient identifiers", function () {
     const ids = [...html.matchAll(/id="(somerionWingGradient\d+)"/g)].map(match => match[1]);
     const refs = [...html.matchAll(/url\(#(somerionWingGradient\d+)\)/g)].map(match => match[1]);
