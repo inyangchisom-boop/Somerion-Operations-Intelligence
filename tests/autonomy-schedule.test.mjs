@@ -27,3 +27,4 @@ describe("isolated Agent API scheduled task monitor", function () {
   assert.match(worker, /FROM agent_notifications n JOIN agent_tasks t/);
   assert.match(worker, /SELECT id,message,created_at,read_at/);
 });
+});
