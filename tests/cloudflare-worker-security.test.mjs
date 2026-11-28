@@ -183,7 +183,7 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
   it("protects all production adapter endpoints with verified Firebase tokens and security headers", async function () {
     const token = await makeToken(true, "adapter-user", "somerion-oi");
     for (const worker of [coreWorker, shopifyWorker, woocommerceWorker, socialWorker]) {
-      const res = await worker.fetch(request("/v1/status", token), mockEnv());
+      const res = await worker.fetch(request("/v1/status", token, { origin: "https://inyangchisom-boop.github.io" }), mockEnv());
       assert.equal(res.status, 200);
       assert.equal(res.headers.get("x-content-type-options"), "nosniff");
       assert.equal(res.headers.get("cache-control"), "no-store");
@@ -192,7 +192,7 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
 
   it("rejects unverified users on the Core API", async function () {
     const token = await makeToken(false, "unverified-adapter-user", "somerion-oi");
-    const res = await coreWorker.fetch(request("/v1/status", token), mockEnv());
+    const res = await coreWorker.fetch(request("/v1/status", token, { origin: "https://inyangchisom-boop.github.io" }), mockEnv());
     assert.equal(res.status, 401);
   });
 
@@ -201,6 +201,7 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
     let last;
     for (let i = 0; i < 61; i++) {
       last = await coreWorker.fetch(request("/v1/status", null, {
+        origin: "https://inyangchisom-boop.github.io",
         headers: { "CF-Connecting-IP": "198.51.100.46" }
       }), env);
     }
@@ -210,6 +211,7 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
   it("bounds Core API workspace request bodies", async function () {
     const token = await makeToken(true, "workspace-body-user", "somerion-oi");
     const res = await coreWorker.fetch(request("/v1/workspaces", token, {
+      origin: "https://inyangchisom-boop.github.io",
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name: "x".repeat(17000) })
@@ -220,7 +222,7 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
   it("scopes Core API workspace queries to the authenticated user", async function () {
     const token = await makeToken(true, "workspace-scope-user", "somerion-oi");
     const env = mockEnv();
-    const res = await coreWorker.fetch(request("/v1/workspaces", token), env);
+    const res = await coreWorker.fetch(request("/v1/workspaces", token, { origin: "https://inyangchisom-boop.github.io" }), env);
     assert.equal(res.status, 200);
     const query = env.statements.find(x => x.sql.includes("FROM workspaces WHERE user_id=?"));
     assert.ok(query);
