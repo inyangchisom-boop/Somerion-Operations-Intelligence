@@ -1,3 +1,4 @@
+import { handleAutonomyRequest } from "./autonomy.js";
 const PROJECT_ID="somerion-oi-testing";
 const ALLOWED_ORIGIN="https://somerion-operations-intelligence.netlify.app";
 function response(data,status=200){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Access-Control-Allow-Origin":ALLOWED_ORIGIN,"Access-Control-Allow-Methods":"GET,POST,PUT,PATCH,DELETE,OPTIONS","Access-Control-Allow-Headers":"Authorization,Content-Type","Access-Control-Max-Age":"86400","Vary":"Origin","Cache-Control":"no-store","X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"no-referrer","Permissions-Policy":"camera=(), microphone=(), geolocation=()","Strict-Transport-Security":"max-age=31536000"}})}
@@ -34,6 +35,7 @@ export default {async fetch(request,env){
   }
   const scope=path==="/v1/assistant/chat"?"agent-ai":"agent-api",limit=scope==="agent-ai"?10:60;
   if(!await enforceRateLimit(env,uid,scope,limit))return response({error:"Rate limit reached. Please wait before trying again."},429);
+  const autonomyResponse=await handleAutonomyRequest(request,env,uid,path);if(autonomyResponse)return autonomyResponse;
   if(path==="/v1/tasks"&&request.method==="GET"){
    const {results=[]}=await env.DB.prepare("SELECT id,title,details,status,due_at,created_at,updated_at FROM agent_tasks WHERE uid=? ORDER BY created_at DESC LIMIT 100").bind(uid).all();
    return response({tasks:results});
