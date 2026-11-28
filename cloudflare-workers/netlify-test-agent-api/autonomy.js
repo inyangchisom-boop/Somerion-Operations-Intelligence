@@ -9,7 +9,19 @@ const DEFAULT_SETTINGS = Object.freeze({
 
 const json = (data, status = 200) => new Response(JSON.stringify(data), {
   status,
-  headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store" }
+  headers: {
+    "Content-Type": "application/json; charset=utf-8",
+    "Access-Control-Allow-Origin": "https://somerion-operations-intelligence.netlify.app",
+    "Access-Control-Allow-Methods": "GET,POST,PUT,PATCH,DELETE,OPTIONS",
+    "Access-Control-Allow-Headers": "Authorization,Content-Type,Idempotency-Key",
+    "Vary": "Origin",
+    "Cache-Control": "no-store",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "no-referrer",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+    "Strict-Transport-Security": "max-age=31536000"
+  }
 });
 const nowIso = () => new Date().toISOString();
 const validText = (value, max, required = false) =>
