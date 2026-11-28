@@ -48,6 +48,18 @@ test("blocks paused or disabled automation", () => {
   })).reason, "automation_not_enabled");
 });
 
+test("fails closed when the pause state is missing", () => {
+  assert.equal(evaluateAgentAction(fixture({
+    control: { ownerUid: "owner-123", enabled: true }
+  })).reason, "automation_pause_state_unverified");
+});
+
+test("requires explicit proof that a routine action has no external side effect", () => {
+  assert.equal(evaluateAgentAction(fixture({
+    action: { ...fixture().action, externalSideEffect: undefined }
+  })).reason, "external_side_effect_status_unverified");
+});
+
 test("denies actions not explicitly allowlisted", () => {
   assert.equal(evaluateAgentAction(fixture({
     action: { ...fixture().action, type: "unknown_action" }
