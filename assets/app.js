@@ -3,7 +3,7 @@ import {getAuth,onAuthStateChanged,createUserWithEmailAndPassword,signInWithEmai
 import {getFirestore,collection,addDoc,updateDoc,deleteDoc,doc,onSnapshot,serverTimestamp,getDocs,query,where,runTransaction} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 import {firebaseConfig,configured} from "./firebase-config.js";
 const copyrightYear=document.getElementById("copyrightYear");if(copyrightYear)copyrightYear.textContent=String(new Date().getFullYear());
-const $=id=>document.getElementById(id);const INTEGRATION_API="https://somerion-integration-api.somerion-oi.workers.dev";const OWNER_UID="MnTpG1cRJETCZMs8fbg6tDMkRvA2";let auth,db,user,showAuthAfterSignOut=false,mode="login",kind="order",editId=null,orders=[],products=[],stopA,stopB,wooConnected=false,providerStatuses={},testOnlyMode=true;
+const $=id=>document.getElementById(id);const INTEGRATION_API="https://somerion-integration-api.somerion-oi.workers.dev";let auth,db,user,ownerAccess=null,ownerAccessUid=null,showAuthAfterSignOut=false,mode="login",kind="order",editId=null,orders=[],products=[],stopA,stopB,wooConnected=false,providerStatuses={},testOnlyMode=true;
 const say=(id,s,ok=false)=>{$(id).textContent=s;$(id).className=ok?"msg ok":"msg";};
 const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const money=(n,currency="USD")=>{try{return new Intl.NumberFormat(undefined,{style:"currency",currency}).format(Number(n||0))}catch{return `${currency} ${Number(n||0).toFixed(2)}`}};
@@ -77,7 +77,20 @@ document.addEventListener("click",async e=>{const status=e.target.closest("[data
 
 
 
-// Private customer feedback. All submissions require a verified signed-in account.
+// Owner-only UI visibility is confirmed by the authenticated backend, never by a client-side UID.
+async function hasOwnerAccess(){
+ if(!user||!auth?.currentUser)return false;
+ if(ownerAccessUid===user.uid&&ownerAccess!==null)return ownerAccess;
+ ownerAccessUid=user.uid;ownerAccess=false;
+ try{
+  const token=await auth.currentUser.getIdToken();
+  const response=await fetch(INTEGRATION_API+"/api/lab/access",{headers:{Authorization:"Bearer "+token}});
+  if(!response.ok)return false;
+  const result=await response.json();
+  ownerAccess=result.isOwner===true&&result.labAccess===true;
+  return ownerAccess;
+ }catch{return false;}
+}
 const feedbackCol=()=>collection(db,"feedback");
 function feedbackCard(item,owner=false){
  const date=item.createdAt?.toDate?item.createdAt.toDate().toLocaleString():"Recently submitted";
@@ -90,7 +103,7 @@ async function loadMyFeedback(){
  $("myFeedbackList").innerHTML=rows.length?rows.map(x=>feedbackCard(x)).join(""):'<p class="empty">You have not submitted feedback yet.</p>';
 }
 async function loadAllFeedback(){
- if(user.uid!==OWNER_UID)return;
+ if(!await hasOwnerAccess())return;
  const snap=await getDocs(feedbackCol());
  const rows=snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
  $("allFeedbackList").innerHTML=rows.length?rows.map(x=>feedbackCard(x,true)).join(""):'<p class="empty">No feedback submissions yet.</p>';
@@ -132,7 +145,7 @@ $("feedbackForm").onsubmit=async e=>{
   say("feedbackMsg","Thank you. Your feedback was saved privately and will not appear publicly unless approved.",true);
   try{
    await loadMyFeedback();
-   if(user.uid===OWNER_UID)await loadAllFeedback();
+   if(await hasOwnerAccess())await loadAllFeedback();
   }catch(refreshError){
    say("feedbackMsg","Your feedback was saved. The list could not refresh just now; use Refresh to reload it. "+(refreshError.message||""),true);
   }
@@ -142,7 +155,7 @@ $("feedbackForm").onsubmit=async e=>{
 $("refreshFeedback").onclick=()=>loadAllFeedback().catch(e=>say("appMsg","Could not load feedback: "+e.message));
 document.addEventListener("click",async e=>{
  const publish=e.target.closest("[data-feedback-publish]"),priv=e.target.closest("[data-feedback-private]");
- const button=publish||priv;if(!button)return;if(user?.uid!==OWNER_UID)return;
+ const button=publish||priv;if(!button)return;if(!await hasOwnerAccess())return;
  button.disabled=true;
  try{
   const id=button.dataset.feedbackPublish||button.dataset.feedbackPrivate;
@@ -152,7 +165,7 @@ document.addEventListener("click",async e=>{
  }catch(err){say("appMsg","Could not update publication status: "+err.message);button.disabled=false}
 });
 
-function clean(){if(stopA)stopA();if(stopB)stopB();stopA=stopB=null;if(agentPoll)clearInterval(agentPoll);agentPoll=null;agentTasks=[];agentNotifications=[];orders=[];products=[];if($("labNav"))$("labNav").hidden=true}
+function clean(){if(stopA)stopA();if(stopB)stopB();stopA=stopB=null;ownerAccess=null;ownerAccessUid=null;if(agentPoll)clearInterval(agentPoll);agentPoll=null;agentTasks=[];agentNotifications=[];orders=[];products=[];if($("labNav"))$("labNav").hidden=true}
 function show(userData){user=userData;$("marketing").hidden=true;$("auth").hidden=true;$("workspace").hidden=false;$("account").textContent=user.email||"";clean();trackActivity("page_view",{page:"overview"});loadWooStatus();refreshAgentMonitor();loadPublishedReviews();agentPoll=setInterval(refreshAgentMonitor,60000);stopA=onSnapshot(userCol("orders"),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>say("appMsg","Orders load error: "+e.message));stopB=onSnapshot(userCol("products"),s=>{products=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>say("appMsg","Inventory load error: "+e.message))}
 function table(rows,type,compact=false){if(!rows.length)return '<p class="empty">No records yet. Add a real record to begin.</p>';let heads=type==="order"?["Reference","Customer","Total","Status"]:["Product","SKU","Qty","Reorder","Stock"];return '<div class="table-wrap"><table><thead><tr>'+heads.map(x=>"<th>"+x+"</th>").join("")+(compact?"":"<th>Actions</th>")+'</tr></thead><tbody>'+rows.map(r=>{let vals=type==="order"?[r.reference,r.customer,money(r.total,r.currency||"USD"),r.status]:[r.name,r.sku||"—",r.quantity,r.reorderLevel,Number(r.quantity)<=Number(r.reorderLevel)?"Low stock":"Healthy"];return "<tr>"+vals.map((v,i)=>"<td>"+(type==="product"&&i===4?'<span class="tag '+(v==="Low stock"?"low":"")+'">'+esc(v)+'</span>':esc(v))+"</td>").join("")+(compact?"":'<td><div class="actions"><button data-edit="'+type+':'+r.id+'">Edit</button><button class="del" data-del="'+type+':'+r.id+'">Delete</button></div></td>')+"</tr>"}).join("")+"</tbody></table></div>"}
 function render(){ $("mOrders").textContent=orders.length;$("mOpen").textContent=orders.filter(o=>["Pending","Processing"].includes(o.status)).length;$("mProducts").textContent=products.length;$("mLow").textContent=products.filter(p=>Number(p.quantity)<=Number(p.reorderLevel)).length;$("recent").innerHTML=table([...orders].slice(0,5),"order",true);let low=products.filter(p=>Number(p.quantity)<=Number(p.reorderLevel)).length,open=orders.filter(o=>["Pending","Processing"].includes(o.status)).length;$("signals").innerHTML=(low?'<p>'+low+' low-stock item(s) need review.</p>':"")+(open?'<p>'+open+' open order(s) need attention.</p>':"")||'<p>No alerts from current saved records.</p>';filterRows()}
@@ -163,7 +176,7 @@ function openAuth(nextMode="login"){updateAuthMode(nextMode);$("marketing").hidd
 document.querySelectorAll("[data-auth]").forEach(b=>b.addEventListener("click",()=>openAuth(b.dataset.auth)));
 $("backHome").onclick=()=>{$("auth").hidden=true;$("marketing").hidden=false;window.scrollTo({top:0,behavior:"smooth"})};
 $("mobileMenu").onclick=()=>{const header=document.querySelector(".site-nav"),open=header.classList.toggle("menu-open");$("mobileMenu").setAttribute("aria-expanded",String(open));$("mobileMenu").setAttribute("aria-label",open?"Close navigation":"Open navigation");$("mobileMenu").textContent=open?"✕":"☰";};
-function page(name){trackActivity("page_view",{page:name});if(name==="feedback"){loadMyFeedback().catch(e=>say("feedbackMsg","Could not load your feedback: "+e.message));if(user?.uid===OWNER_UID){$("feedbackModeration").hidden=false;loadAllFeedback().catch(e=>say("appMsg","Could not load feedback: "+e.message))}else $("feedbackModeration").hidden=true;}document.querySelectorAll(".page").forEach(p=>p.hidden=p.id!==name);document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===name));$("pageTitle").textContent=({"task-monitor":"AI Task Monitor"}[name]||name[0].toUpperCase()+name.slice(1))}
+function page(name){trackActivity("page_view",{page:name});if(name==="feedback"){loadMyFeedback().catch(e=>say("feedbackMsg","Could not load your feedback: "+e.message));$("feedbackModeration").hidden=true;hasOwnerAccess().then(owner=>{if(owner){$("feedbackModeration").hidden=false;loadAllFeedback().catch(e=>say("appMsg","Could not load feedback: "+e.message))}})}document.querySelectorAll(".page").forEach(p=>p.hidden=p.id!==name);document.querySelectorAll("[data-page]").forEach(b=>b.classList.toggle("active",b.dataset.page===name));$("pageTitle").textContent=({"task-monitor":"AI Task Monitor"}[name]||name[0].toUpperCase()+name.slice(1))}
 function openRecord(type,r){kind=type;editId=r?.id||null;$("dialogTitle").textContent=(r?"Edit ":"Add ")+(type==="order"?"order":"inventory item");$("orderFields").hidden=type!=="order";$("productFields").hidden=type!=="product";$("orderFields").querySelectorAll("input,select").forEach(el=>el.disabled=type!=="order");$("productFields").querySelectorAll("input,select").forEach(el=>el.disabled=type!=="product");$("recordForm").reset();say("dialogMsg","");if(r&&type==="order"){$("reference").value=r.reference;$("customer").value=r.customer;$("total").value=r.total;$("currency").value=r.currency||"USD";$("status").value=r.status}else if(type==="order"){$("currency").value="USD"}if(r&&type==="product"){$("productName").value=r.name;$("sku").value=r.sku||"";$("quantity").value=r.quantity;$("reorder").value=r.reorderLevel} $("recordDialog").showModal()}
 $("toggleMode").onclick=()=>{updateAuthMode(mode==="login"?"register":"login");say("authMsg","")};
 $("authForm").onsubmit=async e=>{e.preventDefault();if(!auth)return;$("authButton").disabled=true;say("authMsg","");try{if(mode==="login"){const credential=await signInWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);await reload(credential.user);if(credential.user.emailVerified)trackActivity("login",{operation:"sign_in",result:"success"});if(!credential.user.emailVerified){await sendEmailVerification(credential.user);showAuthAfterSignOut=true;await signOut(auth);say("authMsg","Your email is not verified yet. We sent a verification link. Open the email, verify your address, then sign in again.",true)}}else{const credential=await createUserWithEmailAndPassword(auth,$("email").value.trim(),$("password").value);await sendEmailVerification(credential.user);showAuthAfterSignOut=true;await signOut(auth);say("authMsg","Account created. We sent a verification link to your email. Open it to verify your address, then return here and sign in.",true)}}catch(err){say("authMsg",err.message)}finally{$("authButton").disabled=false}};
