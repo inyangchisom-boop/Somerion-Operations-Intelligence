@@ -159,19 +159,27 @@ export async function handleAutonomyRequest(request, env, uid, path) {
     if (existing) return json({ proposal: existing, duplicate: true });
     const settings = await settingsFor(env, uid);
     const allowed = settings.enabled && !settings.paused && settings.allowed_actions.includes(actionType);
-    const slotReserved = allowed ? await reserveDailySlot(env, uid, settings.daily_action_limit) : false;
-    const status = allowed && slotReserved ? "executing" : (allowed ? "blocked_limit" : "pending_approval");
     const id = crypto.randomUUID(), now = nowIso(), expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     await env.DB.prepare("INSERT OR IGNORE INTO agent_action_proposals(id,uid,idempotency_key,action_type,payload_json,status,approval_required,created_at,updated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
-      .bind(id, uid, idempotencyKey, actionType, JSON.stringify(parsed.value), status, status === "pending_approval" ? 1 : 0, now, now, expires).run();
+      .bind(id, uid, idempotencyKey, actionType, JSON.stringify(parsed.value), "pending_approval", 1, now, now, expires).run();
     const saved = await env.DB.prepare("SELECT id,action_type,status,approval_required,created_at,expires_at,result_json FROM agent_action_proposals WHERE uid=? AND idempotency_key=?").bind(uid, idempotencyKey).first();
     if (!saved) return json({ error: "Unable to persist action proposal." }, 500);
     if (saved.id !== id) return json({ proposal: saved, duplicate: true });
-    const proposal = { id, action_type: actionType, status, approval_required: status === "pending_approval", created_at: now, expires_at: expires };
-    if (status === "blocked_limit") {
-      await audit(env, uid, id, actionType, "blocked", "The configured daily action limit has been reached.");
-      return json({ proposal, message: "Daily autonomy limit reached; no action was executed." }, 429);
+    let status = "pending_approval";
+    if (allowed) {
+      if (!await reserveDailySlot(env, uid, settings.daily_action_limit)) {
+        status = "blocked_limit";
+        await env.DB.prepare("UPDATE agent_action_proposals SET status=?,approval_required=0,updated_at=? WHERE id=? AND uid=? AND status='pending_approval'")
+          .bind(status, nowIso(), id, uid).run();
+        await audit(env, uid, id, actionType, "blocked", "The configured daily action limit has been reached.");
+        return json({ proposal: { ...saved, status, approval_required: false }, message: "Daily autonomy limit reached; no action was executed." }, 429);
+      }
+      const claimed = await env.DB.prepare("UPDATE agent_action_proposals SET status='executing',approval_required=0,updated_at=? WHERE id=? AND uid=? AND status='pending_approval'")
+        .bind(nowIso(), id, uid).run();
+      if (!claimed.meta?.changes) return json({ error: "The action proposal could not be claimed for execution." }, 409);
+      status = "executing";
     }
+    const proposal = { id, action_type: actionType, status, approval_required: status === "pending_approval", created_at: now, expires_at: expires };
     if (status === "pending_approval") {
       await audit(env, uid, id, actionType, "approval_required", "Autonomy is disabled, paused, or this action is not pre-authorized.");
       return json({ proposal, message: "Owner approval is required before this internal action can run." }, 202);
