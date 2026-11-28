@@ -62,6 +62,13 @@ async function settingsFor(env, uid) {
   return parseAutonomySettings(row);
 }
 
+async function reserveDailySlot(env, uid, limit) {
+  const day = new Date().toISOString().slice(0, 10);
+  const row = await env.DB.prepare("INSERT INTO agent_autonomy_daily_usage(uid,day,action_count) VALUES(?,?,1) ON CONFLICT(uid,day) DO UPDATE SET action_count=action_count+1 WHERE action_count<? RETURNING action_count")
+    .bind(uid, day, limit).first();
+  return !!row;
+}
+
 async function audit(env, uid, proposalId, actionType, decision, reason) {
   await env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)")
     .bind(crypto.randomUUID(), uid, proposalId, actionType, decision, reason, nowIso()).run();
@@ -144,12 +151,9 @@ export async function handleAutonomyRequest(request, env, uid, path) {
     const existing = await env.DB.prepare("SELECT id,action_type,status,approval_required,created_at,expires_at,result_json FROM agent_action_proposals WHERE uid=? AND idempotency_key=?").bind(uid, idempotencyKey).first();
     if (existing) return json({ proposal: existing, duplicate: true });
     const settings = await settingsFor(env, uid);
-    const today = new Date(); today.setUTCHours(0, 0, 0, 0);
-    const daily = await env.DB.prepare("SELECT COUNT(*) AS total FROM agent_action_proposals WHERE uid=? AND status='executed' AND created_at>=?").bind(uid, today.toISOString()).first();
-    const count = Number(daily?.total || 0);
     const allowed = settings.enabled && !settings.paused && settings.allowed_actions.includes(actionType);
-    const underLimit = count < settings.daily_action_limit;
-    const status = allowed && underLimit ? "executing" : (!underLimit ? "blocked_limit" : "pending_approval");
+    const slotReserved = allowed ? await reserveDailySlot(env, uid, settings.daily_action_limit) : false;
+    const status = allowed && slotReserved ? "executing" : (allowed ? "blocked_limit" : "pending_approval");
     const id = crypto.randomUUID(), now = nowIso(), expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     await env.DB.prepare("INSERT INTO agent_action_proposals(id,uid,idempotency_key,action_type,payload_json,status,approval_required,created_at,updated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
       .bind(id, uid, idempotencyKey, actionType, JSON.stringify(parsed.value), status, status === "pending_approval" ? 1 : 0, now, now, expires).run();
@@ -184,6 +188,15 @@ export async function handleAutonomyRequest(request, env, uid, path) {
         env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, proposal.action_type, "rejected", "Workspace owner rejected the proposal.", now)
       ]);
       return json({ status: "rejected" });
+    }
+    const settings = await settingsFor(env, uid);
+    if (!await reserveDailySlot(env, uid, settings.daily_action_limit)) {
+      const blockedAt = nowIso();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE agent_action_proposals SET status='blocked_limit',updated_at=? WHERE id=? AND uid=? AND status='pending_approval'").bind(blockedAt, id, uid),
+        env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, proposal.action_type, "blocked", "The configured daily action limit has been reached.", blockedAt)
+      ]);
+      return json({ error: "The configured daily action limit has been reached." }, 429);
     }
     const now = nowIso();
     await env.DB.prepare("UPDATE agent_action_proposals SET status='executing',updated_at=? WHERE id=? AND uid=? AND status='pending_approval'").bind(now, id, uid).run();
