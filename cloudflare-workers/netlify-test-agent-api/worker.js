@@ -22,6 +22,8 @@ export default {async fetch(request,env){
  const url=new URL(request.url),path=url.pathname;
  if(path==="/health"&&request.method==="GET")return response({ok:true,service:"somerion-netlify-test-agent-api",environment:"isolated-test",firebaseProject:PROJECT_ID});
  if(!path.startsWith("/v1/"))return response({error:"Not found"},404);
+ const ip=request.headers.get("CF-Connecting-IP")||"unknown";
+ if(!await enforceRateLimit(env,"ip:"+ip,"agent-preauth",60))return response({error:"Rate limit reached. Please wait before trying again."},429);
  let uid;try{uid=await authenticate(request)}catch{return response({error:"Authentication required. Sign in with a verified testing account."},401)}
  try{
   if(["POST","PUT","PATCH"].includes(request.method)){
