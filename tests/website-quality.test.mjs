@@ -7,6 +7,13 @@ const app = readFileSync("assets/app.js", "utf8");
 const css = readFileSync("assets/styles.css", "utf8");
 
 describe("Somerion website quality safeguards", function () {
+  it("provides the auth heading elements required by the login/register controller", function () {
+    assert.ok(html.includes('<h2 id="authTitle">Welcome back.</h2>'));
+    assert.ok(html.includes('<p id="authSubtitle" class="muted">Sign in to pick up where your business left off.</p>'));
+    assert.ok(app.includes('$("authTitle").textContent'));
+    assert.ok(app.includes('$("authSubtitle").textContent'));
+  });
+
   it("uses unique SVG gradient identifiers", function () {
     const ids = [...html.matchAll(/id="(somerionWingGradient\d+)"/g)].map(match => match[1]);
     const refs = [...html.matchAll(/url\(#(somerionWingGradient\d+)\)/g)].map(match => match[1]);
