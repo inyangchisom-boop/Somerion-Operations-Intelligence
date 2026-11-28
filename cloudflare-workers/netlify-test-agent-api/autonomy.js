@@ -90,15 +90,15 @@ async function executeInternalAction(env, uid, proposal) {
     return { status: "executed", result: { task_id: taskId } };
   }
   if (proposal.action_type === "update_task_status") {
-    const result = await env.DB.prepare("UPDATE agent_tasks SET status=?,updated_at=? WHERE id=? AND uid=?")
-      .bind(payload.status, now, payload.task_id, uid).run();
-    if (!result.meta?.changes) throw new Error("The requested task was not found in this workspace.");
-    await env.DB.batch([
-      env.DB.prepare("UPDATE agent_action_proposals SET status='executed',result_json=?,executed_at=?,updated_at=? WHERE id=? AND uid=? AND status IN ('pending_approval','executing')")
-        .bind(JSON.stringify({ task_id: payload.task_id, status: payload.status }), now, now, proposal.id, uid),
-      env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)")
-        .bind(crypto.randomUUID(), uid, proposal.id, proposal.action_type, "executed", "Internal task status updated within the workspace.", now)
+    const results = await env.DB.batch([
+      env.DB.prepare("UPDATE agent_tasks SET status=?,updated_at=? WHERE id=? AND uid=?")
+        .bind(payload.status, now, payload.task_id, uid),
+      env.DB.prepare("UPDATE agent_action_proposals SET status='executed',result_json=?,executed_at=?,updated_at=? WHERE id=? AND uid=? AND status IN ('pending_approval','executing') AND EXISTS (SELECT 1 FROM agent_tasks WHERE id=? AND uid=?)")
+        .bind(JSON.stringify({ task_id: payload.task_id, status: payload.status }), now, now, proposal.id, uid, payload.task_id, uid),
+      env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) SELECT ?,uid,id,action_type,'executed',?,? FROM agent_action_proposals WHERE id=? AND uid=? AND status='executed'")
+        .bind(crypto.randomUUID(), "Internal task status updated within the workspace.", now, proposal.id, uid)
     ]);
+    if (!results[0]?.meta?.changes || !results[1]?.meta?.changes) throw new Error("The requested task was not found in this workspace or the proposal was already processed.");
     return { status: "executed", result: { task_id: payload.task_id, status: payload.status } };
   }
   if (proposal.action_type === "create_content_draft") {
@@ -155,8 +155,11 @@ export async function handleAutonomyRequest(request, env, uid, path) {
     const slotReserved = allowed ? await reserveDailySlot(env, uid, settings.daily_action_limit) : false;
     const status = allowed && slotReserved ? "executing" : (allowed ? "blocked_limit" : "pending_approval");
     const id = crypto.randomUUID(), now = nowIso(), expires = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
-    await env.DB.prepare("INSERT INTO agent_action_proposals(id,uid,idempotency_key,action_type,payload_json,status,approval_required,created_at,updated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
+    await env.DB.prepare("INSERT OR IGNORE INTO agent_action_proposals(id,uid,idempotency_key,action_type,payload_json,status,approval_required,created_at,updated_at,expires_at) VALUES(?,?,?,?,?,?,?,?,?,?)")
       .bind(id, uid, idempotencyKey, actionType, JSON.stringify(parsed.value), status, status === "pending_approval" ? 1 : 0, now, now, expires).run();
+    const saved = await env.DB.prepare("SELECT id,action_type,status,approval_required,created_at,expires_at,result_json FROM agent_action_proposals WHERE uid=? AND idempotency_key=?").bind(uid, idempotencyKey).first();
+    if (!saved) return json({ error: "Unable to persist action proposal." }, 500);
+    if (saved.id !== id) return json({ proposal: saved, duplicate: true });
     const proposal = { id, action_type: actionType, status, approval_required: status === "pending_approval", created_at: now, expires_at: expires };
     if (status === "blocked_limit") {
       await audit(env, uid, id, actionType, "blocked", "The configured daily action limit has been reached.");
@@ -166,8 +169,17 @@ export async function handleAutonomyRequest(request, env, uid, path) {
       await audit(env, uid, id, actionType, "approval_required", "Autonomy is disabled, paused, or this action is not pre-authorized.");
       return json({ proposal, message: "Owner approval is required before this internal action can run." }, 202);
     }
-    const result = await executeInternalAction(env, uid, { id, action_type: actionType, payload_json: JSON.stringify(parsed.value) });
-    return json({ proposal: { ...proposal, status: result.status }, result: result.result }, 201);
+    try {
+      const result = await executeInternalAction(env, uid, { id, action_type: actionType, payload_json: JSON.stringify(parsed.value) });
+      return json({ proposal: { ...proposal, status: result.status }, result: result.result }, 201);
+    } catch (error) {
+      const failedAt = nowIso();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE agent_action_proposals SET status='failed',updated_at=? WHERE id=? AND uid=? AND status='executing'").bind(failedAt, id, uid),
+        env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, actionType, "failed", "Internal action failed; no success is reported.", failedAt)
+      ]);
+      return json({ error: "The internal action could not be completed. Check the proposal and audit log before retrying." }, 502);
+    }
   }
 
   const approvalMatch = path.match(/^\/v1\/autonomy\/proposals\/([0-9a-f-]{36})\/(approve|reject)$/i);
@@ -189,19 +201,29 @@ export async function handleAutonomyRequest(request, env, uid, path) {
       ]);
       return json({ status: "rejected" });
     }
+    const now = nowIso();
+    const claimed = await env.DB.prepare("UPDATE agent_action_proposals SET status='executing',updated_at=? WHERE id=? AND uid=? AND status='pending_approval'").bind(now, id, uid).run();
+    if (!claimed.meta?.changes) return json({ error: "This proposal was already processed." }, 409);
     const settings = await settingsFor(env, uid);
     if (!await reserveDailySlot(env, uid, settings.daily_action_limit)) {
       const blockedAt = nowIso();
       await env.DB.batch([
-        env.DB.prepare("UPDATE agent_action_proposals SET status='blocked_limit',updated_at=? WHERE id=? AND uid=? AND status='pending_approval'").bind(blockedAt, id, uid),
+        env.DB.prepare("UPDATE agent_action_proposals SET status='blocked_limit',updated_at=? WHERE id=? AND uid=? AND status='executing'").bind(blockedAt, id, uid),
         env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, proposal.action_type, "blocked", "The configured daily action limit has been reached.", blockedAt)
       ]);
       return json({ error: "The configured daily action limit has been reached." }, 429);
     }
-    const now = nowIso();
-    await env.DB.prepare("UPDATE agent_action_proposals SET status='executing',updated_at=? WHERE id=? AND uid=? AND status='pending_approval'").bind(now, id, uid).run();
-    const result = await executeInternalAction(env, uid, { ...proposal, status: "executing" });
-    return json({ status: result.status, result: result.result });
+    try {
+      const result = await executeInternalAction(env, uid, { ...proposal, status: "executing" });
+      return json({ status: result.status, result: result.result });
+    } catch (error) {
+      const failedAt = nowIso();
+      await env.DB.batch([
+        env.DB.prepare("UPDATE agent_action_proposals SET status='failed',updated_at=? WHERE id=? AND uid=? AND status='executing'").bind(failedAt, id, uid),
+        env.DB.prepare("INSERT INTO agent_action_audit(id,uid,proposal_id,action_type,decision,reason,created_at) VALUES(?,?,?,?,?,?,?)").bind(crypto.randomUUID(), uid, id, proposal.action_type, "failed", "Approved internal action failed; no success is reported.", failedAt)
+      ]);
+      return json({ error: "The approved internal action could not be completed. Check the proposal and audit log." }, 502);
+    }
   }
 
   return null;
