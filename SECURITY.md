@@ -8,7 +8,7 @@ Report suspected vulnerabilities privately to the project owner using the reposi
 
 ## Security boundaries
 
-- Browser-delivered Firebase web configuration is public configuration, not a server secret.
+- Browser-delivered Firebase web configuration (including its API key) is public configuration, not a server secret. Restrict the key in Google Cloud Console to the required Firebase APIs and approved HTTP referrers. The current key restrictions have not been independently verified; keep the GitHub Pages and isolated Netlify testing origins on the allowlist until hosting changes are approved.
 - Service-account keys, provider client secrets, SMTP credentials, encryption keys, access tokens, and signing keys must remain in managed server-side secret storage.
 - Client-side visibility or hidden navigation is never an authorization boundary.
 - Firestore rules and authenticated backend handlers must enforce user and owner permissions.
