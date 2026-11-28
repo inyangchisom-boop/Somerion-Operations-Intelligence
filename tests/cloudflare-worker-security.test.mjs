@@ -128,6 +128,13 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
     assert.equal(res.status, 401);
   });
 
+  it("includes security headers on Agent API preflight responses", async function () {
+    const res = await agentWorker.fetch(request("/v1/tasks", null, { method: "OPTIONS" }), mockEnv());
+    assert.equal(res.status, 204);
+    assert.equal(res.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(res.headers.get("x-frame-options"), "DENY");
+  });
+
   it("rejects unverified Firebase accounts", async function () {
     const token = await makeToken(false);
     const res = await agentWorker.fetch(request("/v1/tasks", token), mockEnv());
@@ -188,6 +195,16 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
       assert.equal(res.headers.get("x-content-type-options"), "nosniff");
       assert.equal(res.headers.get("cache-control"), "no-store");
     }
+  });
+
+  it("includes security headers on adapter preflight responses", async function () {
+    const res = await coreWorker.fetch(request("/v1/status", null, {
+      origin: "https://inyangchisom-boop.github.io",
+      method: "OPTIONS"
+    }), mockEnv());
+    assert.equal(res.status, 204);
+    assert.equal(res.headers.get("x-content-type-options"), "nosniff");
+    assert.equal(res.headers.get("x-frame-options"), "DENY");
   });
 
   it("rejects unverified users on the Core API", async function () {
