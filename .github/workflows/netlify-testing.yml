@@ -28,3 +28,17 @@ jobs:
           test "$status" = "401"
           headers="$(curl --silent --show-error --dump-header - --output /dev/null --max-time 20 --request OPTIONS https://somerion-netlify-test-agent-api.somerion-oi.workers.dev/v1/autonomy/actions --header 'Origin: https://somerion-operations-intelligence.netlify.app' --header 'Access-Control-Request-Method: POST' --header 'Access-Control-Request-Headers: authorization,content-type,idempotency-key')"
           printf '%s\n' "$headers" | grep -Eiq '^access-control-allow-headers:.*idempotency-key'
+
+      - name: Smoke test isolated Netlify dashboard deployment
+        if: github.event_name == 'push'
+        shell: bash
+        run: |
+          page=""
+          for attempt in $(seq 1 18); do
+            if page="$(curl --fail --silent --show-error --max-time 20 https://somerion-operations-intelligence.netlify.app/)" && printf '%s' "$page" | grep -q 'agentAutonomyForm'; then
+              break
+            fi
+            sleep 10
+          done
+          printf '%s' "$page" | grep -q 'Autonomous agent controls'
+          printf '%s' "$page" | grep -q 'agentAutonomyForm'
