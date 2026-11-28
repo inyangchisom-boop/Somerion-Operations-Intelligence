@@ -24,3 +24,9 @@ Worker source may reference environment bindings such as D1 databases, AI bindin
 6. Do not deploy a production Worker from this directory without explicit release approval and a rollback plan.
 
 These snapshots are not automatically synchronized with Cloudflare. Any dashboard-side Worker change must be brought back into this directory.
+
+## Pending production migrations and SSRF limitation
+
+Before deploying the hardened production Agent API or Integration API, apply the matching SQL migration in `migrations/` to that Worker's own D1 database. The Agent API and Integration API use separate D1 databases; do not apply one migration to the wrong database.
+
+The WooCommerce URL checks reject local/private literal hosts and non-HTTPS URLs, and the adapter refuses redirects. This is defense-in-depth, not a complete DNS-rebinding defense: a public hostname can still resolve to a private address. Keep `TEST_ONLY=true` and do not enable live WooCommerce requests until an outbound egress policy or verified-domain allowlist closes that gap and has been tested.
