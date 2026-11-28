@@ -39,6 +39,13 @@ describe("Somerion website quality safeguards", function () {
     assert.ok(app.includes('if($("labNav"))$("labNav").hidden=true'));
   });
 
+  it("does not expose the owner UID in browser code and asks the backend for moderation access", function () {
+    assert.doesNotMatch(app, /OWNER_UID|MnTpG1cRJETCZMs8fbg6tDMkRvA2/);
+    assert.ok(app.includes('INTEGRATION_API+"/api/lab/access"'));
+    assert.ok(app.includes("await hasOwnerAccess()"));
+    assert.ok(app.includes("ownerAccess=result.isOwner===true&&result.labAccess===true"));
+  });
+
   it("uses unique SVG gradient identifiers", function () {
     const ids = [...html.matchAll(/id="(somerionWingGradient\d+)"/g)].map(match => match[1]);
     const refs = [...html.matchAll(/url\(#(somerionWingGradient\d+)\)/g)].map(match => match[1]);
