@@ -122,7 +122,8 @@ export async function handleAutonomyRequest(request, env, uid, path) {
   }
 
   if (path === "/v1/autonomy/settings" && request.method === "PUT") {
-    const parsed = validateAutonomySettings(await request.json());
+    const settingsBody = await request.json().catch(() => null);
+    const parsed = validateAutonomySettings(settingsBody);
     if (parsed.error) return json({ error: parsed.error }, 400);
     const s = parsed.value, now = nowIso();
     await env.DB.prepare("INSERT INTO agent_autonomy_settings(uid,enabled,paused,allowed_actions,daily_action_limit,created_at,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(uid) DO UPDATE SET enabled=excluded.enabled,paused=excluded.paused,allowed_actions=excluded.allowed_actions,daily_action_limit=excluded.daily_action_limit,updated_at=excluded.updated_at")
@@ -136,13 +137,19 @@ export async function handleAutonomyRequest(request, env, uid, path) {
     return json({ proposals: results });
   }
 
+  if (path === "/v1/autonomy/drafts" && request.method === "GET") {
+    const { results = [] } = await env.DB.prepare("SELECT id,channel,title,body,status,created_at,updated_at FROM agent_content_drafts WHERE uid=? ORDER BY created_at DESC LIMIT 50").bind(uid).all();
+    return json({ drafts: results });
+  }
+
   if (path === "/v1/autonomy/audit" && request.method === "GET") {
     const { results = [] } = await env.DB.prepare("SELECT id,proposal_id,action_type,decision,reason,created_at FROM agent_action_audit WHERE uid=? ORDER BY created_at DESC LIMIT 100").bind(uid).all();
     return json({ events: results });
   }
 
   if (path === "/v1/autonomy/actions" && request.method === "POST") {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "Action request must be a JSON object." }, 400);
     const actionType = body?.action_type;
     const parsed = validateAutonomyAction(actionType, body?.payload);
     if (parsed.error) return json({ error: parsed.error }, 400);
