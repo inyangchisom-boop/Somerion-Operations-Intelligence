@@ -47,4 +47,5 @@ jobs:
         working-directory: functions
         run: |
           npm install --ignore-scripts --no-audit
+          npm run lint
           npm audit --audit-level=high
