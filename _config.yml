@@ -1,0 +1,16 @@
+# Publish only the client website. Keep server-side source, tests and project
+# configuration out of the generated GitHub Pages site.
+exclude:
+  - .github
+  - .gitignore
+  - .firebaserc
+  - README.md
+  - SECURITY.md
+  - functions
+  - cloudflare-workers
+  - tests
+  - node_modules
+  - package.json
+  - package-lock.json
+  - firebase.json
+  - firestore.rules
