@@ -71,7 +71,6 @@ function request(path, token, options = {}) {
 
 describe("Cloudflare Worker security controls (isolated test Workers)", function () {
   before(async function () {
-    globalThis.crypto = webcrypto;
     const pair = await webcrypto.subtle.generateKey({
       name: "RSASSA-PKCS1-v1_5",
       modulusLength: 2048,
