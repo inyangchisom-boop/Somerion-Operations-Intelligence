@@ -36,7 +36,7 @@ describe("Somerion website quality safeguards", function () {
     for (const id of dynamicIds) {
       assert.ok(app.includes('id="' + id + '"'), id + " must be created by the integration renderer");
     }
-    assert.match(app, /if\(\$("labNav")\)\$("labNav")\.hidden=true/);
+    assert.ok(app.includes('if($("labNav"))$("labNav").hidden=true'));
   });
 
   it("uses unique SVG gradient identifiers", function () {
