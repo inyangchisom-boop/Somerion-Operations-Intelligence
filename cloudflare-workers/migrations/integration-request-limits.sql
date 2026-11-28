@@ -1,3 +1,4 @@
+-- Target D1 database: somerion-integration-api (008cdd28-8f59-4af4-9438-f13e498bf902)
 -- Required before deploying the hardened production Integration API.
 CREATE TABLE IF NOT EXISTS request_limits (
   user_id TEXT NOT NULL,
