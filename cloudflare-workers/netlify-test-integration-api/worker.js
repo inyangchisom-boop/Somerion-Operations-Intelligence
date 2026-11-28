@@ -26,7 +26,7 @@ function json(data,status=200,origin=ALLOWED_ORIGIN){
     "Access-Control-Allow-Headers":"Authorization,Content-Type",
     "Vary":"Origin",
     "Cache-Control":"no-store",
-    "X-Content-Type-Options":"nosniff"
+    "X-Content-Type-Options":"nosniff","X-Frame-Options":"DENY","Referrer-Policy":"no-referrer","Permissions-Policy":"camera=(), microphone=(), geolocation=()","Strict-Transport-Security":"max-age=31536000"
   }});
 }
 function b64url(input){return Uint8Array.from(atob(input.replace(/-/g,"+").replace(/_/g,"/").padEnd(Math.ceil(input.length/4)*4,"=")),c=>c.charCodeAt(0));}
@@ -51,6 +51,8 @@ async function verifyFirebaseToken(token){
   if(!valid)throw new Error("Token signature is invalid.");
   return {uid:claims.sub,email:typeof claims.email==="string"?claims.email:null};
 }
+async function bodyWithinLimit(request,maxBytes){const reader=request.clone().body?.getReader();if(!reader)return true;let total=0;while(true){const part=await reader.read();if(part.done)return true;total+=part.value.byteLength;if(total>maxBytes){await reader.cancel();return false}}}
+async function enforceRateLimit(env,uid,scope,limit){const now=Date.now(),minute=Math.floor(now/60000),bucket=scope+":"+minute,reset=(minute+1)*60000;const row=await env.DB.prepare("INSERT INTO request_limits(uid,bucket,count,reset_at) VALUES(?,?,1,?) ON CONFLICT(uid,bucket) DO UPDATE SET count=count+1,reset_at=excluded.reset_at RETURNING count").bind(uid,bucket,reset).first();if(minute%10===0&&now%60000<5000)await env.DB.prepare("DELETE FROM request_limits WHERE reset_at<?").bind(now).run();return !!row&&row.count<=limit}
 function safeDetails(value){
   if(!value||typeof value!=="object"||Array.isArray(value))return {};
   const out={};
@@ -78,7 +80,16 @@ export default {
     const authorization=request.headers.get("Authorization")||"";
     if(!authorization.startsWith("Bearer "))return json({error:"Authentication required."},401);
     identity=await verifyFirebaseToken(authorization.slice(7));
-  }catch(e){return json({error:e.message||"Authentication failed."},401);}
+  }catch{return json({error:"Authentication required. Sign in with a verified testing account."},401);}
+  try{
+   if(["POST","PUT","PATCH","DELETE"].includes(request.method)){
+     if(request.method!=="DELETE"){
+       const type=request.headers.get("Content-Type")||"",declared=Number(request.headers.get("Content-Length")||0);
+       if(!type.toLowerCase().startsWith("application/json"))return json({error:"Content-Type must be application/json."},415);
+       if(declared>16384||!await bodyWithinLimit(request,16384))return json({error:"Request body is too large."},413);
+     }
+   }
+   if(!await enforceRateLimit(env,identity.uid,"integration-api",60))return json({error:"Rate limit reached. Please wait before trying again."},429);
   if(path==="/api/integrations"&&request.method==="GET"){
     return json({testOnly:true,environment:"isolated-test",providers:PROVIDERS.map(p=>({...p,configured:false,connected:false}))});
   }
@@ -99,5 +110,6 @@ export default {
   if(path.startsWith("/api/integrations/")&&request.method==="POST")return json({error:"Provider authorization is disabled in the isolated test environment until its OAuth adapter is verified."},409);
   if(path.startsWith("/api/integrations/")&&request.method==="DELETE")return json({ok:true,disconnected:false});
   return json({error:"Endpoint not available in isolated testing API."},404);
+  }catch(error){console.error("integration_api_request_failed",{path,errorName:error?.name||"Error"});return json({error:"The testing service encountered an internal error."},500);}
  }
 };
