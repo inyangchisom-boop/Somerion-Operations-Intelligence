@@ -78,6 +78,8 @@ function mockEnv() {
     prepare(sql) {
       let params=[];
       const statement={
+        sql,
+        get params(){return params},
         bind(...values){params=values;return statement},
         async first(){
           if (sql.includes("SELECT enabled,paused,allowed_actions,daily_action_limit")) return clone(state.settings.get(params[0]));
