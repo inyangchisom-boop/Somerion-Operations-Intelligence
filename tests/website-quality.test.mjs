@@ -14,6 +14,31 @@ describe("Somerion website quality safeguards", function () {
     assert.ok(app.includes('$("authSubtitle").textContent'));
   });
 
+  it("keeps HTML IDs unique and JavaScript DOM lookups resolvable", function () {
+    const htmlIds = [...html.matchAll(/\\bid=["']([^"']+)["']/g)].map(match => match[1]);
+    assert.equal(new Set(htmlIds).size, htmlIds.length, "HTML element IDs must be unique");
+
+    const dynamicIds = new Set([
+      "wooConnectButton",
+      "wooSyncButton",
+      "paypalConnectButton",
+      "paypalTestButton"
+    ]);
+    const optionalIds = new Set(["labNav"]);
+    const referencedIds = [...new Set(
+      [...app.matchAll(/\\$\\(["']([^"']+)["']\\)/g)].map(match => match[1])
+    )];
+    const unresolved = referencedIds.filter(id =>
+      !htmlIds.includes(id) && !dynamicIds.has(id) && !optionalIds.has(id)
+    );
+    assert.deepEqual(unresolved, [], "Static JavaScript lookups must exist in index.html");
+
+    for (const id of dynamicIds) {
+      assert.ok(app.includes('id="' + id + '"'), id + " must be created by the integration renderer");
+    }
+    assert.match(app, /if\\(\\$\\("labNav"\\)\\)\\$\\("labNav"\\)\\.hidden=true/);
+  });
+
   it("uses unique SVG gradient identifiers", function () {
     const ids = [...html.matchAll(/id="(somerionWingGradient\d+)"/g)].map(match => match[1]);
     const refs = [...html.matchAll(/url\(#(somerionWingGradient\d+)\)/g)].map(match => match[1]);
