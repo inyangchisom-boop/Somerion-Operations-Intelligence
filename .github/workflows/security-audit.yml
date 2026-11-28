@@ -35,7 +35,9 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v5
         with:
-          node-version: 22
+          node-version: 24
+      - name: Check isolated Worker JavaScript syntax
+        run: node --check cloudflare-workers/netlify-test-agent-api/worker.js
       - name: Audit root dependencies
         run: |
           npm install --ignore-scripts --no-audit
