@@ -1,8 +1,33 @@
+# Dependencies and build output
 node_modules/
 functions/node_modules/
+coverage/
+dist/
+build/
+
+# Firebase / hosting local state
 .firebase/
 .firebase-debug.log
 firebase-debug.log
 firebase-debug.*.log
+.wrangler/
+.netlify/
+
+# Local environment files (keep examples only)
 .env
 .env.*
+!.env.example
+!.env.*.example
+
+# Private keys, certificates and service-account credentials
+*.pem
+*.key
+*.p12
+*.pfx
+service-account*.json
+firebase-adminsdk*.json
+
+# Local/editor/OS files
+.DS_Store
+Thumbs.db
+*.log

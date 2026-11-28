@@ -1,0 +1,52 @@
+name: Security Audit
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main, security/hardening-audit]
+  schedule:
+    - cron: "23 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  secret-scan:
+    name: Scan repository history for secrets
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out full Git history
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - name: Scan with Gitleaks
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  dependency-audit:
+    name: Audit npm dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v5
+      - name: Set up Node.js
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      - name: Check isolated Worker JavaScript syntax
+        run: find cloudflare-workers -name worker.js -print0 | while IFS= read -r -d '' file; do node --input-type=module -e 'import { readFile } from "node:fs/promises"; await import("data:text/javascript;base64," + Buffer.from(await readFile(process.argv[1])).toString("base64"));' "$file"; done
+      - name: Audit root dependencies
+        run: |
+          npm install --ignore-scripts --no-audit
+          npx mocha --timeout 30000 tests/website-quality.test.mjs tests/cloudflare-worker-security.test.mjs
+          npm audit --audit-level=high
+      - name: Audit Firebase Functions dependencies
+        working-directory: functions
+        run: |
+          npm install --ignore-scripts --no-audit
+          npm run lint
+          node -e 'const n=require("nodemailer"); if(typeof n.createTransport!=="function") throw new Error("Nodemailer CommonJS API missing"); require("firebase-functions/v2/https"); require("firebase-functions/params"); require("firebase-admin/app");'
+          npm audit --audit-level=high

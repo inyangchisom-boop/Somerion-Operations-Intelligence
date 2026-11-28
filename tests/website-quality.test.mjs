@@ -39,6 +39,34 @@ describe("Somerion website quality safeguards", function () {
     assert.ok(app.includes('if($("labNav"))$("labNav").hidden=true'));
   });
 
+  it("does not expose the owner UID in browser code and asks the backend for moderation access", function () {
+    assert.doesNotMatch(app, /OWNER_UID|MnTpG1cRJETCZMs8fbg6tDMkRvA2/);
+    assert.ok(app.includes('INTEGRATION_API+"/api/lab/access"'));
+    assert.ok(app.includes("await hasOwnerAccess()"));
+    assert.ok(app.includes("ownerAccess=result.isOwner===true&&result.labAccess===true"));
+    assert.ok(app.includes("const requestUid=user.uid"));
+    assert.ok(app.includes("ownerAccessUid!==requestUid"));
+  });
+
+  it("escapes user-controlled HTML output and uses textContent for chat", function () {
+    const escapeLine = app.split("\n").find(line => line.startsWith("const esc="));
+    assert.ok(escapeLine, "a shared HTML-escaping function must exist");
+    const escapeHtml = new Function("return (" + escapeLine.slice("const esc=".length).replace(/;$/, "") + ");")();
+    assert.equal(
+      escapeHtml('<img src=x onerror="alert(1)"> & \'quoted\''),
+      "&lt;img src=x onerror=&quot;alert(1)&quot;&gt; &amp; &#39;quoted&#39;"
+    );
+    assert.ok(app.includes("esc(t.title)"));
+    assert.ok(app.includes("esc(t.details)"));
+    assert.ok(app.includes("esc(n.message)"));
+    assert.ok(app.includes('esc(item.message||"")'));
+    assert.ok(app.includes("esc(v)"));
+    assert.ok(app.includes("el.textContent=message"));
+    assert.ok(!app.includes("eval("));
+    assert.ok(!app.includes("new Function("));
+    assert.ok(!app.includes("document.write("));
+  });
+
   it("uses unique SVG gradient identifiers", function () {
     const ids = [...html.matchAll(/id="(somerionWingGradient\d+)"/g)].map(match => match[1]);
     const refs = [...html.matchAll(/url\(#(somerionWingGradient\d+)\)/g)].map(match => match[1]);
