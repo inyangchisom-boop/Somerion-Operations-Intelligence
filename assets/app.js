@@ -87,7 +87,7 @@ function renderAgentMonitor(){const open=agentTasks.filter(t=>t.status==="open")
  $("agentOpenCount").textContent=open;$("agentProgressCount").textContent=progress;$("agentOverdueCount").textContent=overdue;$("agentDueCount").textContent=due;$("agentTaskTotal").textContent=agentTasks.length+" task"+(agentTasks.length===1?"":"s");
  $("agentTaskList").innerHTML=agentTasks.length?agentTasks.map(t=>{const state=agentTaskState(t),next=t.status==="open"?"in_progress":t.status==="in_progress"?"done":"open",action=t.status==="open"?"Start":t.status==="in_progress"?"Mark done":"Reopen";return '<article class="agent-task-row"><div class="agent-task-copy"><div class="agent-task-title"><strong>'+esc(t.title)+'</strong><span class="agent-state '+(state==="Overdue"?"is-overdue":state==="Completed"?"is-done":state==="Due soon"?"is-soon":"")+'">'+esc(state)+'</span></div>'+(t.details?'<p>'+esc(t.details)+'</p>':'')+'<small>Due: '+esc(agentDate(t.due_at))+'</small></div><div class="agent-task-actions"><button type="button" data-agent-status="'+esc(t.id)+'" data-next="'+next+'">'+action+'</button><button type="button" class="agent-delete" data-agent-delete="'+esc(t.id)+'" aria-label="Delete task">Delete</button></div></article>'}).join(""):'<p class="empty">No tasks yet. Add your first task above.</p>';
  $("agentNotifications").innerHTML=agentNotifications.length?agentNotifications.map(n=>'<div class="agent-notification"><i></i><div><p>'+esc(n.message)+'</p><small>'+esc(agentDate(n.created_at))+'</small></div></div>').join(""):'<p class="empty">No reminders yet. Add tasks with due dates to receive reminders.</p>'}
-async function refreshAgentMonitor(){try{const [t,n,p]=await Promise.all([agentCall("/v1/tasks"),agentCall("/v1/notifications"),agentCall("/v1/preferences")]);agentTasks=t.tasks||[];agentNotifications=n.notifications||[];$("agentReminders").checked=p.reminders_enabled!==false;renderAgentMonitor();$("agentTaskMsg").textContent=""}catch(e){$("agentTaskList").innerHTML='<p class="empty">'+esc(e.message)+'</p>';say("appMsg","AI Task Monitor: "+e.message)}}
+async function refreshAgentMonitor(){try{const [t,n,p]=await Promise.all([agentCall("/v1/tasks"),agentCall("/v1/notifications"),agentCall("/v1/preferences")]);agentTasks=t.tasks||[];agentNotifications=n.notifications||[];$("agentReminders").checked=p.reminders_enabled!==false;renderAgentMonitor();$("agentTaskMsg").textContent="";await refreshAutonomyPanel()}catch(e){$("agentTaskList").innerHTML='<p class="empty">'+esc(e.message)+'</p>';say("appMsg","AI Task Monitor: "+e.message)}}
 function agentChatAppend(role,message){const el=document.createElement("div");el.className="agent-chat-bubble "+role;el.textContent=message;$("agentChatLog").appendChild(el);$("agentChatLog").scrollTop=$("agentChatLog").scrollHeight}
 $("agentTaskForm").onsubmit=async e=>{e.preventDefault();const b=$("agentTaskAdd");b.disabled=true;try{const due=$("agentTaskDue").value?new Date($("agentTaskDue").value).toISOString():null;await agentCall("/v1/tasks","POST",{title:$("agentTaskTitle").value.trim(),details:$("agentTaskDetails").value.trim(),due_at:due});trackActivity("task_created",{entity:"ai_task",operation:"create",result:"success"});$("agentTaskForm").reset();say("agentTaskMsg","Task added to your monitor.",true);await refreshAgentMonitor()}catch(err){say("agentTaskMsg",err.message)}finally{b.disabled=false}};
 $("agentRefresh").onclick=refreshAgentMonitor;
@@ -96,6 +96,102 @@ $("agentChatForm").onsubmit=async e=>{e.preventDefault();const input=$("agentCha
 document.addEventListener("click",async e=>{const status=e.target.closest("[data-agent-status]"),del=e.target.closest("[data-agent-delete]");if(status){status.disabled=true;try{await agentCall("/v1/tasks/"+encodeURIComponent(status.dataset.agentStatus),"PATCH",{status:status.dataset.next});trackActivity("task_updated",{entity:"ai_task",operation:"status_change",status:status.dataset.next,result:"success"});await refreshAgentMonitor()}catch(err){say("agentTaskMsg",err.message)}finally{status.disabled=false}}if(del){const id=del.dataset.agentDelete;if(!confirm("Delete this monitored task?"))return;del.disabled=true;try{await agentCall("/v1/tasks/"+encodeURIComponent(id),"DELETE");trackActivity("task_deleted",{entity:"ai_task",operation:"delete",result:"success"});await refreshAgentMonitor()}catch(err){say("agentTaskMsg",err.message)}finally{del.disabled=false}}});
 
 
+
+async function autonomyCall(path,method="GET",body,extraHeaders={}){
+ const token=await auth.currentUser.getIdToken();
+ const response=await fetch(AGENT_API+path,{method,headers:{"Authorization":"Bearer "+token,"Content-Type":"application/json",...extraHeaders},...(body!==undefined?{body:JSON.stringify(body)}:{})});
+ const data=await response.json().catch(()=>({error:"Invalid autonomy response."}));
+ if(!response.ok)throw new Error(data.error||"Autonomy request failed.");
+ return data;
+}
+function renderAutonomyPanel(data){
+ const s=data.settings||{enabled:false,paused:true,allowed_actions:[],daily_action_limit:10};
+ $("agentAutonomyEnabled").checked=!!s.enabled;
+ $("agentAutonomyPaused").checked=!!s.paused;
+ $("agentAllowCreateTask").checked=(s.allowed_actions||[]).includes("create_task");
+ $("agentAllowUpdateTask").checked=(s.allowed_actions||[]).includes("update_task_status");
+ $("agentAllowDraft").checked=(s.allowed_actions||[]).includes("create_content_draft");
+ $("agentAutonomyLimit").value=s.daily_action_limit||10;
+ const badge=$("agentAutonomyBadge");
+ badge.textContent=s.paused?"Emergency paused":s.enabled?"Autonomy active":"Approval mode";
+ badge.className="agent-autonomy-badge "+(s.paused?"is-paused":s.enabled?"is-active":"is-approval");
+ const proposals=data.proposals||[];
+ $("agentProposalList").innerHTML=proposals.length?proposals.map(p=>'<article class="agent-autonomy-item"><div><strong>'+esc(p.action_type.replaceAll("_"," "))+'</strong><small>'+esc(p.status)+' · '+esc(agentDate(p.created_at))+'</small></div>'+(p.status==="pending_approval"?'<div class="agent-autonomy-buttons"><button type="button" data-autonomy-approve="'+esc(p.id)+'">Approve</button><button type="button" class="secondary" data-autonomy-reject="'+esc(p.id)+'">Reject</button></div>':"")+'</article>').join(""):'<p class="empty">No action proposals yet.</p>';
+ const drafts=data.drafts||[];
+ $("agentDraftList").innerHTML=drafts.length?drafts.map(d=>'<article class="agent-autonomy-item"><div><strong>'+esc(d.title)+'</strong><small>'+esc(d.channel)+' · '+esc(agentDate(d.created_at))+'</small><p>'+esc(d.body)+'</p></div></article>').join(""):'<p class="empty">No saved content drafts yet.</p>';
+ const events=data.events||[];
+ $("agentAuditList").innerHTML=events.length?events.slice(0,12).map(a=>'<article class="agent-audit-item"><strong>'+esc(a.action_type.replaceAll("_"," "))+' · '+esc(a.decision)+'</strong><small>'+esc(a.reason)+' · '+esc(agentDate(a.created_at))+'</small></article>').join(""):'<p class="empty">No agent activity recorded yet.</p>';
+}
+async function refreshAutonomyPanel(){
+ try{
+  const [settings,proposals,drafts,audit]=await Promise.all([
+   autonomyCall("/v1/autonomy/settings"),
+   autonomyCall("/v1/autonomy/proposals"),
+   autonomyCall("/v1/autonomy/drafts"),
+   autonomyCall("/v1/autonomy/audit")
+  ]);
+  renderAutonomyPanel({settings:settings.settings,proposals:proposals.proposals,drafts:drafts.drafts,events:audit.events});
+ }catch(e){
+  $("agentAutonomyBadge").textContent="Unavailable";
+  $("agentAutonomyMsg").textContent=e.message;
+ }
+}
+async function saveAutonomySettings(pausedOverride){
+ const enabled=$("agentAutonomyEnabled").checked;
+ const paused=typeof pausedOverride==="boolean"?pausedOverride:$("agentAutonomyPaused").checked;
+ if(enabled&&!paused&&!confirm("Enable autonomous actions in the isolated test workspace? Only the selected internal actions will be allowed. Nothing will be published or sent."))return;
+ const allowed_actions=[];
+ if($("agentAllowCreateTask").checked)allowed_actions.push("create_task");
+ if($("agentAllowUpdateTask").checked)allowed_actions.push("update_task_status");
+ if($("agentAllowDraft").checked)allowed_actions.push("create_content_draft");
+ const daily_action_limit=Number($("agentAutonomyLimit").value);
+ const button=$("agentAutonomyForm").querySelector('button[type="submit"]');
+ if(button)button.disabled=true;
+ try{
+  await autonomyCall("/v1/autonomy/settings","PUT",{enabled,paused,allowed_actions,daily_action_limit});
+  $("agentAutonomyPaused").checked=paused;
+  $("agentAutonomyMsg").textContent=paused?"Emergency pause is active. No actions can be approved or executed.":"Autonomy settings saved. Review the allowed actions and daily limit.";
+  $("agentAutonomyMsg").className="msg ok";
+  await refreshAutonomyPanel();
+ }catch(e){$("agentAutonomyMsg").textContent=e.message;$("agentAutonomyMsg").className="msg"}
+ finally{if(button)button.disabled=false}
+}
+$("agentAutonomyForm").onsubmit=async e=>{e.preventDefault();await saveAutonomySettings()};
+$("agentEmergencyPause").onclick=async()=>{await saveAutonomySettings(true)};
+$("agentAutonomyTaskForm").onsubmit=async e=>{
+ e.preventDefault();const button=e.currentTarget.querySelector('button[type="submit"]');button.disabled=true;
+ try{
+  const result=await autonomyCall("/v1/autonomy/actions","POST",{action_type:"create_task",payload:{title:$("agentActionTaskTitle").value.trim(),details:$("agentActionTaskDetails").value.trim(),due_at:null}},{"Idempotency-Key":crypto.randomUUID()});
+  $("agentAutonomyTaskForm").reset();
+  $("agentAutonomyMsg").textContent=result.proposal?.status==="executed"?"Somerion created the internal task.":result.message||"The task is waiting for your approval.";
+  $("agentAutonomyMsg").className="msg ok";
+  await refreshAgentMonitor();await refreshAutonomyPanel();
+ }catch(err){$("agentAutonomyMsg").textContent=err.message;$("agentAutonomyMsg").className="msg"}
+ finally{button.disabled=false}
+};
+$("agentAutonomyDraftForm").onsubmit=async e=>{
+ e.preventDefault();const button=e.currentTarget.querySelector('button[type="submit"]');button.disabled=true;
+ try{
+  const result=await autonomyCall("/v1/autonomy/actions","POST",{action_type:"create_content_draft",payload:{channel:$("agentDraftChannel").value,title:$("agentDraftTitle").value.trim(),body:$("agentDraftBody").value.trim()}},{"Idempotency-Key":crypto.randomUUID()});
+  $("agentAutonomyDraftForm").reset();
+  $("agentAutonomyMsg").textContent=result.proposal?.status==="executed"?"Content draft saved. It has not been published or sent.":result.message||"The draft action is waiting for your approval.";
+  $("agentAutonomyMsg").className="msg ok";
+  await refreshAutonomyPanel();
+ }catch(err){$("agentAutonomyMsg").textContent=err.message;$("agentAutonomyMsg").className="msg"}
+ finally{button.disabled=false}
+};
+document.addEventListener("click",async e=>{
+ const approve=e.target.closest("[data-autonomy-approve]"),reject=e.target.closest("[data-autonomy-reject]");
+ const button=approve||reject;if(!button)return;button.disabled=true;
+ try{
+  const decision=approve?"approve":"reject",id=button.dataset.autonomyApprove||button.dataset.autonomyReject;
+  await autonomyCall("/v1/autonomy/proposals/"+encodeURIComponent(id)+"/"+decision,"POST",{});
+  $("agentAutonomyMsg").textContent=decision==="approve"?"Proposal approved and processed.":"Proposal rejected.";
+  $("agentAutonomyMsg").className="msg ok";
+  await refreshAgentMonitor();await refreshAutonomyPanel();
+ }catch(err){$("agentAutonomyMsg").textContent=err.message;$("agentAutonomyMsg").className="msg"}
+ finally{button.disabled=false}
+});
 function clean(){if(stopA)stopA();if(stopB)stopB();if(stopCustomers)stopCustomers();if(stopProjects)stopProjects();if(stopServiceJobs)stopServiceJobs();if(stopFinance)stopFinance();if(stopTasks)stopTasks();stopA=stopB=stopCustomers=stopProjects=stopServiceJobs=stopFinance=stopTasks=null;if(agentPoll)clearInterval(agentPoll);agentPoll=null;agentTasks=[];agentNotifications=[];orders=[];products=[];customers=[];projects=[];serviceJobs=[];financeEntries=[];tasks=[];moduleRecords.customers=customers;moduleRecords.projects=projects;moduleRecords.serviceJobs=serviceJobs;moduleRecords.finance=financeEntries;moduleRecords.tasks=tasks;businessProfile=null;if($("businessWorkspaceName"))$("businessWorkspaceName").textContent="My business";if($("labNav"))$("labNav").hidden=true}
 function show(userData){user=userData;$("marketing").hidden=true;$("auth").hidden=true;$("workspace").hidden=false;$("account").textContent=user.email||"";clean();loadBusinessProfile();loadWooStatus();refreshAgentMonitor();listenModule("customers");listenModule("projects");listenModule("serviceJobs");listenModule("finance");listenModule("tasks");agentPoll=setInterval(refreshAgentMonitor,60000);stopA=onSnapshot(userCol("orders"),s=>{orders=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>say("appMsg","Orders load error: "+e.message));stopB=onSnapshot(userCol("products"),s=>{products=s.docs.map(d=>({id:d.id,...d.data()}));render()},e=>say("appMsg","Inventory load error: "+e.message))}
 function table(rows,type,compact=false){if(!rows.length)return '<p class="empty">No records yet. Add a real record to begin.</p>';let heads=type==="order"?["Reference","Customer","Total","Status"]:["Product","SKU","Qty","Reorder","Stock"];return '<div class="table-wrap"><table><thead><tr>'+heads.map(x=>"<th>"+x+"</th>").join("")+(compact?"":"<th>Actions</th>")+'</tr></thead><tbody>'+rows.map(r=>{let vals=type==="order"?[r.reference,r.customer,money(r.total,r.currency||"USD"),r.status]:[r.name,r.sku||"—",r.quantity,r.reorderLevel,Number(r.quantity)<=Number(r.reorderLevel)?"Low stock":"Healthy"];return "<tr>"+vals.map((v,i)=>"<td>"+(type==="product"&&i===4?'<span class="tag '+(v==="Low stock"?"low":"")+'">'+esc(v)+'</span>':esc(v))+"</td>").join("")+(compact?"":'<td><div class="actions"><button data-edit="'+type+':'+r.id+'">Edit</button><button class="del" data-del="'+type+':'+r.id+'">Delete</button></div></td>')+"</tr>"}).join("")+"</tbody></table></div>"}

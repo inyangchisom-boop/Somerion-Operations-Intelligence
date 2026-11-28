@@ -132,3 +132,34 @@ p, label, li, td, th {
 html{font-size:100%}body{font-size:1rem;zoom:1;line-height:1.6}
 button,input,select,textarea{font:inherit}button{min-height:44px}input,select,textarea{font-size:16px;min-height:44px}
 @media(max-width:680px){.site-nav{position:relative;flex-wrap:wrap}.site-nav.menu-open .site-links{display:flex;position:static;order:3;width:100%;margin:0;padding:14px 0 8px;flex-direction:column;align-items:stretch;gap:0;border-top:1px solid #e9edf5}.site-nav.menu-open .site-links a{display:block;padding:12px 4px;font-size:14px}.site-nav.menu-open .site-actions{display:flex;position:static;order:4;width:100%;padding:0 0 14px;justify-content:flex-start;gap:10px}.site-nav.menu-open .mobile-menu{margin-left:auto}}
+
+
+/* Bounded autonomy controls — isolated test workspace */
+.agent-autonomy-card{grid-column:1/-1;min-width:0}
+.agent-autonomy-badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 10px;background:#f1f4f8;color:#536176;font-size:9px;font-weight:800;white-space:nowrap}
+.agent-autonomy-badge.is-active{background:#e8f7ef;color:#167447}
+.agent-autonomy-badge.is-paused{background:#fff0ed;color:#a63e2e}
+.agent-autonomy-badge.is-approval{background:#eef2ff;color:#425bc4}
+.agent-autonomy-form,.agent-autonomy-propose form{display:grid;gap:11px}
+.agent-autonomy-form>label:not(.agent-autonomy-check),.agent-autonomy-propose label{display:grid;gap:6px;font-size:10px;font-weight:700;color:#5c687b}
+.agent-autonomy-form input[type=number],.agent-autonomy-propose input,.agent-autonomy-propose textarea,.agent-autonomy-propose select{width:100%;border:1px solid #dfe5ef;border-radius:8px;padding:10px 11px;background:#fff;color:#1e293b;font:inherit;font-size:11px}
+.agent-autonomy-check{display:flex;align-items:center;gap:9px;font-size:10px;color:#445168;font-weight:700}
+.agent-autonomy-check input{accent-color:#4969ed}
+.agent-autonomy-form fieldset{display:grid;gap:9px;border:1px solid #e7ebf2;border-radius:10px;padding:12px}
+.agent-autonomy-form legend{padding:0 5px;font-size:9px;font-weight:800;color:#66758b}
+.agent-autonomy-buttons{display:flex;gap:8px;flex-wrap:wrap}
+.agent-autonomy-buttons button{font-size:9px}
+.agent-autonomy-propose{display:grid;gap:12px;margin-top:18px;padding-top:16px;border-top:1px solid #edf0f5}
+.agent-autonomy-propose h4,.agent-autonomy-section h4{margin:0;font-size:11px;color:#24324a}
+.agent-autonomy-propose form{padding:12px;border:1px solid #edf0f5;border-radius:10px;background:#fbfcff}
+.agent-autonomy-propose button{justify-self:start;font-size:9px}
+.agent-autonomy-section{margin-top:18px;padding-top:15px;border-top:1px solid #edf0f5}
+.agent-autonomy-section>div{display:grid;gap:8px;margin-top:10px}
+.agent-autonomy-item,.agent-audit-item{display:grid;gap:6px;padding:10px 11px;border:1px solid #edf0f5;border-radius:9px;background:#fff;min-width:0}
+.agent-autonomy-item>div:first-child{display:grid;gap:4px;min-width:0}
+.agent-autonomy-item strong,.agent-audit-item strong{font-size:10px;color:#2b3850;overflow-wrap:anywhere}
+.agent-autonomy-item small,.agent-audit-item small{font-size:8px;line-height:1.5;color:#8290a4;overflow-wrap:anywhere}
+.agent-autonomy-item p{margin:2px 0 0;font-size:10px;line-height:1.6;color:#59677c;white-space:pre-wrap;overflow-wrap:anywhere}
+.agent-audit-item{gap:4px}
+.agent-autonomy-card .agent-disclaimer{margin-top:14px;padding:10px;border-radius:8px;background:#f6f8fc;font-size:9px;line-height:1.6}
+@media(max-width:680px){.agent-autonomy-card{grid-column:auto}.agent-autonomy-buttons{width:100%}.agent-autonomy-buttons button{flex:1}.agent-autonomy-item{gap:9px}}
