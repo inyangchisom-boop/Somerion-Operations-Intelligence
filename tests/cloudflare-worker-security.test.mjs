@@ -190,10 +190,9 @@ describe("Cloudflare Worker security controls (isolated test Workers)", function
 
   it("rejects unsafe WooCommerce URL forms before any outbound request", function () {
     const source = readFileSync("cloudflare-workers/production/integration-api/worker.js", "utf8");
-    const start = source.indexOf("function httpsStore(v)");
-    const end = source.indexOf("async function wc", start);
-    assert.ok(start >= 0 && end > start, "WooCommerce URL validator must exist");
-    const httpsStore = new Function(source.slice(start, end) + "; return httpsStore;")();
+    const helperLine = source.split("\\n").find(line => line.startsWith("function httpsStore(v)"));
+    assert.ok(helperLine, "WooCommerce URL validator must exist");
+    const httpsStore = new Function(helperLine + "; return httpsStore;")();
     assert.equal(httpsStore("https://store.example.com"), true);
     for (const url of [
       "http://store.example.com",
