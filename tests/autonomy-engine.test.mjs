@@ -58,6 +58,9 @@ function mockEnv() {
       } else if (sql.includes("SET status='rejected'")) {
         proposal=state.proposals.get(p[1]);status="rejected";updated=p[0];
         if (!proposal || proposal.uid!==p[2] || proposal.status!=="pending_approval") return {meta:{changes:0}};
+      } else if (sql.includes("SET status='pending_approval'")) {
+        proposal=state.proposals.get(p[1]);status="pending_approval";updated=p[0];
+        if (!proposal || proposal.uid!==p[2] || proposal.status!=="executing") return {meta:{changes:0}};
       } else if (sql.includes("SET status='expired'")) {
         proposal=state.proposals.get(p[1]);status="expired";updated=p[0];
       } else if (sql.includes("SET status='failed'")) {
