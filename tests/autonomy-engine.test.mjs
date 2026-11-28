@@ -125,6 +125,15 @@ function req(path,method="GET",body,headers={}) {
 async function json(response){return response.json()}
 
 describe("Isolated bounded autonomy execution engine", function () {
+  it("returns CORS and security headers on autonomy API responses", async function () {
+    const env=mockEnv();
+    const res=await handleAutonomyRequest(req("/v1/autonomy/settings"),env,"user-a","/v1/autonomy/settings");
+    assert.equal(res.headers.get("access-control-allow-origin"),"https://somerion-operations-intelligence.netlify.app");
+    assert.equal(res.headers.get("access-control-allow-headers"),"Authorization,Content-Type,Idempotency-Key");
+    assert.equal(res.headers.get("x-content-type-options"),"nosniff");
+    assert.equal(res.headers.get("cache-control"),"no-store");
+  });
+
   it("starts disabled and paused", async function () {
     const env=mockEnv(),res=await handleAutonomyRequest(req("/v1/autonomy/settings"),env,"user-a","/v1/autonomy/settings");
     const data=await json(res);
