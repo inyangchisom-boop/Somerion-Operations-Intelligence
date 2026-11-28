@@ -55,3 +55,13 @@ CREATE TABLE IF NOT EXISTS agent_content_drafts (
 );
 CREATE INDEX IF NOT EXISTS idx_agent_content_drafts_user_created
   ON agent_content_drafts(uid, created_at DESC);
+
+-- Atomic per-workspace daily quota reservations prevent concurrent requests
+-- from exceeding the configured action limit. Failed executions consume a
+-- slot conservatively so retries cannot bypass the cap.
+CREATE TABLE IF NOT EXISTS agent_autonomy_daily_usage (
+  uid TEXT NOT NULL,
+  day TEXT NOT NULL,
+  action_count INTEGER NOT NULL DEFAULT 0 CHECK (action_count >= 0),
+  PRIMARY KEY (uid, day)
+) WITHOUT ROWID;
